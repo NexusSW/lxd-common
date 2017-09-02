@@ -8,7 +8,7 @@ module NexusSW
         def initialize(rest_endpoint, driver_options)
           hkoptions = (driver_options || {}).merge(
             api_endpoint: rest_endpoint,
-            auto_sync: true,
+            auto_sync: true
           )
           @hk = Hyperkit::Client.new(hkoptions)
         end
