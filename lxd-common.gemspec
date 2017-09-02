@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = 'Shared LXD Container Access Library'
   # spec.description   = %q{TODO: Write a longer description or delete this line.}
-  spec.homepage      = 'http://github.com/NexusSW/lxd-coommon'
+  spec.homepage      = 'http://github.com/NexusSW/lxd-common'
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
