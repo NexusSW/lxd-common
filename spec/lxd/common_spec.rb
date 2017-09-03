@@ -53,7 +53,7 @@ describe NexusSW::LXD::Driver do
       it 'can read a file' do
         expect(transport.read_file('/tmp/passwd.tmp')).to include('root:')
       end
-    end if false
+    end
 
     it 'can stop a container' do
       nx_driver.stop_container test_name
