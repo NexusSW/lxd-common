@@ -13,7 +13,7 @@ module NexusSW
         end
         attr_reader :inner_transport, :punt
 
-        def execute(command, options = {})
+        def execute_chunked(command, options = {}, &block)
           mycommand = command.is_a?(Array) ? command.join(' ') : command
           subcommand = options[:subcommand] || "exec #{container_name} --"
           mycommand = "lxc #{subcommand} #{mycommand}"
@@ -21,6 +21,7 @@ module NexusSW
           myoptions = myoptions.clone if myoptions.key?(:subcommand)
           myoptions.delete :subcommand
           with_streamoptions(myoptions) do |newoptions|
+            return inner_transport.execute mycommand, newoptions, block if block_given?
             return inner_transport.execute mycommand, newoptions
           end
         end

@@ -1,0 +1,4 @@
+# Delete this file once cookstyle's https://github.com/chef/cookstyle/pull/38 is released
+Layout/EndOfLine:
+  Enabled: true
+  EnforcedStyle: lf

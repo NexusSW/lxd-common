@@ -64,7 +64,7 @@ module NexusSW
         # end
       end
 
-      def execute(_command, _options = {})
+      def execute_chunked(_command, _options = {}, &_block)
         raise 'NexusSW::LXD::Transport.execute not implemented'
       end
 
@@ -74,6 +74,14 @@ module NexusSW
 
       def write_file(_path, _content)
         raise 'NexusSW::LXD::Transport.write_file not implemented'
+      end
+
+      def download_file(_path, _local_path)
+        raise 'NexusSW::LXD::Transport.download_file not implemented'
+      end
+
+      def upload_file(_local_path, _path)
+        raise 'NexusSW::LXD::Transport.upload_file not implemented'
       end
 
       def available?

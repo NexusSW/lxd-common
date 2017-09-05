@@ -9,7 +9,7 @@ module NexusSW
           super self, 'local:', config
         end
 
-        def execute(command, options = {})
+        def execute_chunked(command, options = {}, &_)
           with_streamoptions(options) do |stream_options|
             Open3.popen3(command) do |_stdin, stdout, stderr, th|
               streams = [stdout, stderr]
@@ -25,7 +25,7 @@ module NexusSW
                 rescue IO::WaitReadable
                   IO.select(streams, nil, streams, 1) unless stdout_chunk
                 end
-                stream_chunk stream_options, stdout_chunk, stderr_chunk
+                yield(stdout_chunk, stderr_chunk, stream_options)
                 return LXDExecuteResult.new(command, stream_options, th.value.exitstatus) if th.value.exited? && stdout.eof? && stderr.eof?
               end
             end

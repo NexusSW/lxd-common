@@ -32,21 +32,23 @@ module NexusSW
         # :may_cancel=>false,
         # :err=>""}
 
-        def execute(command, options = {})
+        def execute_chunked(command, options = {}, &_)
           with_streamoptions(options) do |stream_options|
             retval = hk.execute_command(container_name, command, record_output: true)
-            retval[:metadata][:output].each do |fd, log|
-              parts = log.split '/'
-              begin
+            begin
+              retval[:metadata][:output].each do |fd, log|
+                parts = log.split '/'
                 chunk = hk.log(container_name, parts.last)
-                # pp '', '*** chunk ***', chunk, '**********'
-                stream_chunk(stream_options, chunk, '') if fd.to_s == '1'
-                stream_chunk(stream_options, '', chunk) if fd.to_s == '2'
-              ensure
+                yield(chunk, '', stream_options) if fd.to_s == '1'
+                yield('', chunk, stream_options) if fd.to_s == '2'
+              end
+              return LXDExecuteResult.new(command, stream_options, retval[:metadata][:return].to_i)
+            ensure
+              retval[:metadata][:output].each do |_fd, log|
+                parts = log.split '/'
                 hk.delete_log(container_name, parts.last)
               end
             end
-            return LXDExecuteResult.new(command, stream_options, retval[:metadata][:return].to_i) # if th.value.exited? && stdout.eof? && stderr.eof?
           end
         end
 
