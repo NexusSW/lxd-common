@@ -1,10 +1,11 @@
 require 'spec_helper'
+require 'tempfile'
 
 describe NexusSW::LXD::Driver do
   let(:test_name) { 'lxd-driver-test' }
-  let(:nx_driver) { NexusSW::LXD::Driver::Rest.new 'https://localhost:8443', verify_ssl: false }
+  let(:nx_driver) { NexusSW::LXD::Driver::CLI.new ::NexusSW::LXD::Transport::Local.new }
 
-  context 'Rest Interface' do
+  context 'Local CLI Interface' do
     it 'detects a missing container' do
       expect(nx_driver.container_exists?('idontexist')).not_to be true
     end
@@ -26,33 +27,33 @@ describe NexusSW::LXD::Driver do
       expect(nx_driver.container_status(test_name)).to eq 'running'
     end
 
-    context 'Rest Transport' do
-      let(:transport) { driver.transport_strategy.guest_transport(test_name) }
+    let(:transport) { NexusSW::LXD::Transport::CLI.new nx_driver, NexusSW::LXD::Transport::Local.new, test_name }
 
-      it 'can execute a command in the container' do
-        expect { transport.execute(['ls', '-al', '/']).error! }.not_to raise_error
-      end
+    it 'can execute a command in the container' do
+      expect { transport.execute(['ls', '-al', '/']).error! }.not_to raise_error
+    end
 
-      it 'remaps localhost to an adapter ip' do
-        expect(transport.make_url_available_to_remote('chefzero://localhost:1234')).not_to include('localhost')
-        expect(transport.make_url_available_to_remote('chefzero://127.0.0.1:1234')).not_to include('127.0.0.1')
-      end
+    it 'can output to a file' do
+      expect { transport.write_file('/tmp/somerandomfile.tmp', 'some random content') }.not_to raise_error
+    end
 
-      it 'can output to a file' do
-        expect { transport.write_file('/tmp/somerandomfile.tmp', 'some random content') }.not_to raise_error
-      end
+    it 'can upload a file' do
+      expect { transport.upload_file('.rspec', '/tmp/rspec.tmp') }.not_to raise_error
+    end
 
-      it 'can upload a file' do
-        expect { transport.upload_file('/etc/passwd', '/tmp/passwd.tmp') }.not_to raise_error
-      end
-
+    tfile = Tempfile.new 'lxd-rspec-tests'
+    begin
+      tfile.close
       it 'can download a file' do
-        expect { transport.download_file('/etc/group', '/tmp/rspectest.tmp') }.not_to raise_error
+        expect { transport.download_file('/tmp/rspec.tmp', tfile.path) }.not_to raise_error
       end
 
       it 'can read a file' do
-        expect(transport.read_file('/tmp/passwd.tmp')).to include('root:')
+        expect(transport.read_file('/tmp/rspec.tmp')).to eq(File.read(tfile.path))
       end
+      # don't unlink or tfile.path gets nil'd out before the capture - just let it fall out of scope
+      # ensure
+      # tfile.unlink
     end
 
     it 'can stop a container' do

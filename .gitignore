@@ -8,3 +8,5 @@
 /spec/reports/
 /tmp/
 .directory
+.vagrant
+*console.log
