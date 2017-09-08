@@ -29,8 +29,9 @@ module NexusSW
         def error!
           return if exitstatus == 0
           msg = "Error: '#{command}' failed with exit code #{exitstatus}."
-          msg += "\nSTDOUT:#{stdout}" if stdout
-          msg += "\nSTDERR:#{stderr}" if stderr
+          msg += "\nSTDOUT:#{stdout}" if stdout && !stdout.empty?
+          msg += "\nSTDERR:#{stderr}" if stderr && !stderr.empty?
+          raise msg
         end
       end
 
