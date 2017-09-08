@@ -1,6 +1,7 @@
 require 'nexussw/lxd/transport'
 require 'nexussw/lxd/transport/local'
 require 'tempfile'
+require 'pp'
 
 module NexusSW
   module LXD
@@ -13,17 +14,12 @@ module NexusSW
         end
         attr_reader :inner_transport, :punt
 
-        def execute_chunked(command, options = {}, &block)
+        def execute(command, options = {})
           mycommand = command.is_a?(Array) ? command.join(' ') : command
           subcommand = options[:subcommand] || "exec #{container_name} --"
           mycommand = "lxc #{subcommand} #{mycommand}"
-          myoptions = options
-          myoptions = myoptions.clone if myoptions.key?(:subcommand)
-          myoptions.delete :subcommand
-          with_streamoptions(myoptions) do |newoptions|
-            return inner_transport.execute mycommand, newoptions, block if block_given?
-            return inner_transport.execute mycommand, newoptions
-          end
+          myoptions = options.key?(:subcommand) ? options.merge(subcommand: nil) : options
+          inner_transport.execute mycommand, myoptions
         end
 
         def read_file(path)

@@ -7,9 +7,9 @@ module NexusSW
   module LXD
     class Driver
       class CLI < Driver
-        def initialize(inner_transport, driver_options)
+        def initialize(inner_transport, driver_options = {})
           @inner_transport = inner_transport
-          @driver_options = driver_options
+          @driver_options = driver_options || {}
         end
 
         attr_reader :inner_transport, :driver_options

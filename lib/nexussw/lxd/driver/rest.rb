@@ -5,7 +5,7 @@ module NexusSW
   module LXD
     class Driver
       class Rest < Driver
-        def initialize(rest_endpoint, driver_options)
+        def initialize(rest_endpoint, driver_options = {})
           hkoptions = (driver_options || {}).merge(
             api_endpoint: rest_endpoint,
             auto_sync: true
