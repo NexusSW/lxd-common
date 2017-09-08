@@ -34,7 +34,11 @@ module NexusSW
       def execute(command, options = {}, &block)
         options.merge!(handle_chunk: block) if block_given? # rubocop:disable Performance/RedundantMerge
         unless options[:handle_chunk]
+<<<<<<< HEAD
           options = {
+=======
+          options = { 
+>>>>>>> 4f449ae7e959d75b1c85b0d5c9b711f418bcf70e
             stdout: '',
             stderr: '',
           }.merge options
