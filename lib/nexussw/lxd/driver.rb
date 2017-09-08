@@ -54,8 +54,13 @@ module NexusSW
         false
       end
 
-      def container_hostname(container_id)
-        container_id
+      protected
+
+      def wait_for_status(container_id, newstatus)
+        loop do
+          break if container_status(container_id) == newstatus
+          sleep 0.5
+        end
       end
     end
   end

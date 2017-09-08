@@ -12,33 +12,32 @@ module NexusSW
       class LXDExecuteResult
         def initialize(command, stream_options, exitstatus)
           @command = command
-          @stream_options = stream_options
+          @stream_options = stream_options || {}
           @exitstatus = exitstatus
         end
 
-        attr_reader :exitstatus, :stream_options
+        attr_reader :exitstatus, :stream_options, :command
 
         def stdout
-          stream_options[:stream_stdout] || stream_options[:stdout]
+          stream_options[:stdout]
         end
 
         def stderr
-          stream_options[:stream_stderr] || stream_options[:stderr]
+          stream_options[:stderr]
         end
 
         def error!
-          raise "Error: '#{@command}' failed with exit code #{@exitstatus}.\nSTDOUT:#{stdout}\nSTDERR:#{stderr}" if @exitstatus != 0
+          return if exitstatus == 0
+          msg = "Error: '#{command}' failed with exit code #{exitstatus}."
+          msg += "\nSTDOUT:#{stdout}" if stdout
+          msg += "\nSTDERR:#{stderr}" if stderr
         end
       end
 
       def execute(command, options = {}, &block)
         options.merge!(handle_chunk: block) if block_given? # rubocop:disable Performance/RedundantMerge
         unless options[:handle_chunk]
-<<<<<<< HEAD
           options = {
-=======
-          options = { 
->>>>>>> 4f449ae7e959d75b1c85b0d5c9b711f418bcf70e
             stdout: '',
             stderr: '',
           }.merge options

@@ -27,11 +27,13 @@ module NexusSW
         def start_container(container_id)
           return if container_status(container_id) == 'running'
           inner_transport.execute("lxc start #{container_id}").error!
+          wait_for_status container_id, 'running'
         end
 
         def stop_container(container_id)
           return if container_status(container_id) == 'stopped'
           inner_transport.execute("lxc stop #{container_id}").error!
+          wait_for_status container_id, 'stopped'
         end
 
         def delete_container(container_id)
