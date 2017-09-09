@@ -27,19 +27,31 @@ module NexusSW
         def start_container(container_id)
           return if container_status(container_id) == 'running'
           inner_transport.execute("lxc start #{container_id}").error!
-          wait_for_status container_id, 'running'
         end
 
-        def stop_container(container_id)
+        def stop_container(container_id, options = {})
+          newoptions = {
+            timeout: 60,
+            retry_interval: 10,
+            process_timeout: 15, # clean up after ourselves, just in case ruby doesn't, but we'll control the erroring ourselves due to exitstatus==1 on timeout and many other errors
+          }.merge(options || {})
+          with_timeout_and_retries(newoptions) do
+            return if container_status(container_id) == 'stopped'
+            retval = inner_transport.execute("lxc stop #{container_id} --timeout=#{newoptions[:process_timeout]}")
+            # if an abandoned stop attempt finishes stopping, The above could potentially error with 'container already stopped'
+            # so don't raise the error without first double checking
+            return if container_status(container_id) == 'stopped'
+            retval.error!
+          end
+        rescue Timeout::Error
           return if container_status(container_id) == 'stopped'
-          inner_transport.execute("lxc stop #{container_id}").error!
-          wait_for_status container_id, 'stopped'
+          return inner_transport.execute("lxc stop #{container_id} --force").error! if newoptions[:force]
+          raise
         end
 
         def delete_container(container_id)
           return unless container_exists? container_id
-          inner_transport.execute("lxc stop -f #{container_id}").error! unless container_status(container_id) == 'stopped'
-          inner_transport.execute("lxc delete #{container_id}").error!
+          inner_transport.execute("lxc delete #{container_id} --force").error!
         end
 
         def container_status(container_id)

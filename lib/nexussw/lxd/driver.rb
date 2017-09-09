@@ -1,3 +1,5 @@
+require 'timeout'
+
 module NexusSW
   module LXD
     class Driver
@@ -27,7 +29,7 @@ module NexusSW
         raise 'NexusSW::LXD::Driver.start_container not implemented'
       end
 
-      def stop_container(_container_id)
+      def stop_container(_container_id, _options = {})
         raise 'NexusSW::LXD::Driver.stop_container not implemented'
       end
 
@@ -56,10 +58,27 @@ module NexusSW
 
       protected
 
-      def wait_for_status(container_id, newstatus)
-        loop do
-          break if container_status(container_id) == newstatus
-          sleep 0.5
+      class ::Timeout::Retry < ::Timeout::Error
+      end
+      # Must specify :retry_interval in order to receive retries
+      # And if so, then either :timeout or :retry_count must be specified
+      #   :timeout == 0 without :retry_count is valid in this case, saying to retry forever
+      # If nothing is specified, then this function is ineffectual and runs indefinitely
+      def with_timeout_and_retries(options = {})
+        Timeout.timeout(options[:timeout] || 0) do
+          tries = 0
+          loop do
+            begin
+              Timeout.timeout(options[:retry_interval] || 0, Timeout::Retry) do
+                tries += 1
+                return yield
+              end
+            rescue Timeout::Retry
+              next if options[:retry_count] && (tries <= options[:retry_count])
+              next if options[:timeout]
+              raise
+            end
+          end
         end
       end
     end

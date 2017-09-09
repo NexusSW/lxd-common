@@ -34,11 +34,11 @@ describe NexusSW::LXD::Driver do
     end
 
     it 'can output to a file' do
-      expect { transport.write_file('/tmp/somerandomfile.tmp', 'some random content') }.not_to raise_error
+      expect { transport.write_file('/tmp/rspec.tmp', File.read('.rspec')) }.not_to raise_error
     end
 
     it 'can upload a file' do
-      expect { transport.upload_file('.rspec', '/tmp/rspec.tmp') }.not_to raise_error
+      expect { transport.upload_file('.rspec', '/tmp/rspec2.tmp') }.not_to raise_error
     end
 
     tfile = Tempfile.new 'lxd-rspec-tests'
@@ -49,7 +49,8 @@ describe NexusSW::LXD::Driver do
       end
 
       it 'can read a file' do
-        expect(transport.read_file('/tmp/rspec.tmp')).to eq(File.read(tfile.path))
+        expect(transport.read_file('/tmp/rspec.tmp')).to eq(File.read('.rspec'))
+        expect(transport.read_file('/tmp/rspec2.tmp')).to eq(File.read(tfile.path))
       end
       # don't unlink or tfile.path gets nil'd out before the capture - just let it fall out of scope
       # ensure
@@ -57,7 +58,7 @@ describe NexusSW::LXD::Driver do
     end
 
     it 'can stop a container' do
-      nx_driver.stop_container test_name
+      nx_driver.stop_container test_name, retry_interval: 1, process_timeout: 2
       expect(nx_driver.container_status(test_name)).to eq 'stopped'
     end
 

@@ -63,10 +63,23 @@ Vagrant.configure('2') do |config|
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
+
+  # this runs as root - after the `lxc info` line is a hack to make sure
+  # `lxc info` generates the client cert - i don't remember that happening in some instances
+  #   that's 'why' i issue that command, and we may need to manually generate in the future
+  # that that the client cert is in the right place so that you can use the rest api
+  # as the `ubuntu` user - which is your context for `vagrant ssh` commands
   config.vm.provision 'shell', inline: <<-SHELL
     apt-get update
     apt-get install -y lxd
-    lxd init --auto
+    lxd init --auto --network-address [::] --network-port 8443
+    lxc info
+
+    mkdir -p /home/ubuntu/.config/lxc
+    cp ~/.config/lxc/client.* /home/ubuntu/.config/lxc
+    chown -R ubuntu:ubuntu /home/ubuntu/.config
+    lxc config trust add ~/.config/lxc/client.crt
+
     apt-get install -y ruby
     gem install bundler
     cd /vagrant

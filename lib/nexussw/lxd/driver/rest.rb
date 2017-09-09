@@ -24,19 +24,34 @@ module NexusSW
         def start_container(container_id)
           return if container_status(container_id) == 'running'
           @hk.start_container(container_id)
-          waitforstatus container_id, 'running'
         end
 
-        def stop_container(container_id)
+        def stop_container(container_id, options = {})
+          newoptions = {
+            timeout: 60,
+            # retry_interval: 10,
+            process_timeout: 15, # clean up after ourselves, just in case ruby doesn't, but we'll control the erroring ourselves due to exitstatus==1 on timeout and many other errors
+          }.merge(options || {})
+          with_timeout_and_retries(newoptions) do
+            return if container_status(container_id) == 'stopped'
+            begin
+              @hk.stop_container container_id, timeout: 1 # newoptions[:process_timeout])
+            rescue => e
+              pp 'stop_container', 'exception from rest api stopping container', \
+                 'TODO: suppress the "already stopped" error', 'Or if timeout can be identified, use it directly', e
+              return if container_status(container_id) == 'stopped'
+              raise
+            end
+          end
+        rescue Timeout::Error
           return if container_status(container_id) == 'stopped'
-          @hk.stop_container(container_id)
-          waitforstatus container_id, 'stopped'
+          return @hk.stop_container(container_id, force: true) if newoptions[:force]
+          raise
         end
 
         def delete_container(container_id)
           return unless container_exists? container_id
-          @hk.stop_container(container_id, force: true) unless container_status(container_id) == 'stopped'
-          waitforstatus container_id, 'stopped'
+          stop_container container_id, force: true
           @hk.delete_container(container_id)
         end
 
@@ -54,17 +69,6 @@ module NexusSW
 
         def container(container_id)
           @hk.container container_id
-        end
-
-        private
-
-        # TODO: add timeout
-        def waitforstatus(container_id, newstatus)
-          loop do
-            status = container_status(container_id)
-            break if status == newstatus
-            sleep 0.5
-          end
         end
       end
     end
