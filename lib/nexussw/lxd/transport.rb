@@ -36,7 +36,7 @@ module NexusSW
       end
 
       def execute(command, options = {}, &block)
-        options.merge!(handle_chunk: block) if block_given? # rubocop:disable Performance/RedundantMerge
+        options = options.merge(handle_chunk: block) if block_given?
         unless options[:handle_chunk]
           options = {
             stdout: '',
@@ -74,7 +74,7 @@ module NexusSW
 
       protected
 
-      def execute_chunked(_command, _options = {}, &_block)
+      def execute_chunked(_command, _options = {})
         raise 'NexusSW::LXD::Transport.execute_chunked not implemented'
       end
     end
