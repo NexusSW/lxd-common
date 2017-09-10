@@ -64,9 +64,9 @@ Vagrant.configure('2') do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
 
-  # this runs as root - after the `lxc info` line is a hack to make sure
   # `lxc info` generates the client cert - i don't remember that happening in some instances
   #   that's 'why' i issue that command, and we may need to manually generate in the future
+  # this runs as root - after the `lxc info` line is a hack to make sure
   # that that the client cert is in the right place so that you can use the rest api
   # as the `ubuntu` user - which is your context for `vagrant ssh` commands
   config.vm.provision 'shell', inline: <<-SHELL
