@@ -27,15 +27,11 @@ module NexusSW
         end
 
         def stop_container(container_id, options = {})
-          newoptions = {
-            timeout: 60,
-            # retry_interval: 10,
-            process_timeout: 15, # clean up after ourselves, just in case ruby doesn't, but we'll control the erroring ourselves due to exitstatus==1 on timeout and many other errors
-          }.merge(options || {})
-          with_timeout_and_retries(newoptions) do
+          options ||= {}
+          with_timeout_and_retries(options) do
             return if container_status(container_id) == 'stopped'
             begin
-              @hk.stop_container container_id, timeout: 1 # newoptions[:process_timeout])
+              @hk.stop_container container_id, timeout: 1
             rescue => e
               pp 'stop_container', 'exception from rest api stopping container', \
                  'TODO: suppress the "already stopped" error', 'Or if timeout can be identified, use it directly', e
@@ -45,7 +41,7 @@ module NexusSW
           end
         rescue Timeout::Error
           return if container_status(container_id) == 'stopped'
-          return @hk.stop_container(container_id, force: true) if newoptions[:force]
+          return @hk.stop_container(container_id, force: true) if options[:force]
           raise
         end
 

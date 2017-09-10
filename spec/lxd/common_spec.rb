@@ -58,7 +58,7 @@ describe NexusSW::LXD::Driver do
     end
 
     it 'can stop a container' do
-      nx_driver.stop_container test_name, retry_interval: 1, process_timeout: 2
+      nx_driver.stop_container test_name, timeout: 60, retry_interval: 1
       expect(nx_driver.container_status(test_name)).to eq 'stopped'
     end
 
