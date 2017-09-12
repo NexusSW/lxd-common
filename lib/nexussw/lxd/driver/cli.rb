@@ -149,7 +149,7 @@ module NexusSW
           port = url.split(':', 3)[2]
           url += ':8443' unless port || protocol != 'lxd'
           remotes = begin
-                      YAML.load(inner_transport.read_file("~/.config/lxc/config.yml")) || {}
+                      YAML.load(inner_transport.read_file('~/.config/lxc/config.yml')) || {}
                     rescue
                       {}
                     end
