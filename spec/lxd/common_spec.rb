@@ -58,7 +58,7 @@ end
 
 shared_examples 'Container Shutdown' do
   it 'can stop a container' do
-    nx_driver.stop_container test_name, timeout: 60, retry_interval: 1
+    nx_driver.stop_container test_name, timeout: 60, retry_interval: 2
     expect(nx_driver.container_status(test_name)).to eq 'stopped'
   end
 
@@ -74,22 +74,24 @@ shared_examples 'Container Shutdown' do
 end
 
 describe NexusSW::LXD::Driver do
-  let(:test_name) { 'lxd-rest-driver-test' }
-  let(:nx_driver) { NexusSW::LXD::Driver::Rest.new 'https://localhost:8443', verify_ssl: false }
-  let(:rest_transport) { NexusSW::LXD::Transport::Rest.new nx_driver, test_name }
-  #  context 'Local CLI Interface' do
-#    let(:test_name) { 'lxd-cli-driver-test' }
-#    let(:nx_driver) { NexusSW::LXD::Driver::CLI.new ::NexusSW::LXD::Transport::Local.new }
-#    include_examples 'Container Startup'
-#    let(:transport) { NexusSW::LXD::Transport::CLI.new nx_driver, NexusSW::LXD::Transport::Local.new, test_name }
-#    include_examples 'Transport Functions'
-#    include_examples 'Container Shutdown'
-#  end
+  let(:rest_name) { 'lxd-rest-driver-test' }
+  let(:rest_driver) { NexusSW::LXD::Driver::Rest.new 'https://localhost:8443', verify_ssl: false }
+  let(:rest_transport) { NexusSW::LXD::Transport::Rest.new rest_driver, rest_name }
+  context 'Local CLI Interface' do
+    let(:test_name) { 'lxd-cli-driver-test' }
+    let(:nx_driver) { NexusSW::LXD::Driver::CLI.new ::NexusSW::LXD::Transport::Local.new }
+    include_examples 'Container Startup'
+    let(:transport) { NexusSW::LXD::Transport::CLI.new nx_driver, NexusSW::LXD::Transport::Local.new, test_name }
+    include_examples 'Transport Functions'
+    include_examples 'Container Shutdown'
+  end
   context 'Rest Interface' do
+    let(:test_name) { rest_name }
+    let(:nx_driver) { rest_driver }
     include_examples 'Container Startup'
     let(:transport) { rest_transport }
     include_examples 'Transport Functions'
-    it 'can execute more commands' do
+    it 'can set up a nested LXD' do
       # Bootup race condition on my slow laptop - wait for socket to become available
       expect { transport.execute('bash -c "while ! [ -a /var/lib/lxd/unix.socket ]; do sleep 1; done; lxd init --auto"').error! }.not_to raise_error
     end
@@ -103,6 +105,8 @@ describe NexusSW::LXD::Driver do
     include_examples 'Container Shutdown'
   end
   context 'Rest Interface - Stage 2' do
+    let(:test_name) { rest_name }
+    let(:nx_driver) { rest_driver }
     include_examples 'Container Shutdown'
   end
 end

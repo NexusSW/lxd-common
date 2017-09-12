@@ -37,6 +37,10 @@ module NexusSW
               myopts[:force] = options[:force] if options.key? :force
               myopts[:timeout] = (options[:retry_interval] * 2) if options.key?(:retry_interval) && options[:retry_interval] > 0
               @hk.stop_container container_id, myopts
+            rescue Faraday::TimeoutError # Should not happen, but did on a slow system
+              return if container_status(container_id) == 'stopped'
+              sleep myopts[:timeout] # don't return to the enclosing `with_timeout_and_retries` - if we do the loop will give up - give the slow system a chance to catch up
+              raise
             rescue Hyperkit::BadRequest
               return if container_status(container_id) == 'stopped'
               raise
