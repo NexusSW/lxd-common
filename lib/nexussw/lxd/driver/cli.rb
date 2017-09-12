@@ -33,7 +33,8 @@ module NexusSW
           options ||= {} # default behavior: no timeout or retries.  These functions are up to the consumer's context and not really 'sane' defaults
           with_timeout_and_retries(options) do
             return if container_status(container_id) == 'stopped'
-            retval = inner_transport.execute("lxc stop #{container_id} --timeout=#{(options[:retry_interval] || 0) * 2}")
+            force = '--force' if options[:force]
+            retval = inner_transport.execute("lxc stop #{container_id} --timeout=#{(options[:retry_interval] || 0) * 2} #{force || ''}")
             # if an abandoned stop attempt finishes stopping, The above could potentially error with 'container already stopped'
             # so don't raise the error without first double checking
             return if container_status(container_id) == 'stopped'
@@ -148,7 +149,7 @@ module NexusSW
           port = url.split(':', 3)[2]
           url += ':8443' unless port || protocol != 'lxd'
           remotes = begin
-                      YAML.load(inner_transport.read_file("#{ENV['HOME']}/.config/lxc/config.yml")) || {}
+                      YAML.load(inner_transport.read_file("~/.config/lxc/config.yml")) || {}
                     rescue
                       {}
                     end

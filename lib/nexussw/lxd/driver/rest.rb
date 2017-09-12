@@ -18,6 +18,7 @@ module NexusSW
         def create_container(container_name, container_options = {})
           return if container_exists?(container_name)
           @hk.create_container(container_name, container_options)
+          start_container container_name
           container_name
         end
 
@@ -26,15 +27,17 @@ module NexusSW
           @hk.start_container(container_id)
         end
 
+        # <Hyperkit::BadRequest: 400 - Error: >
         def stop_container(container_id, options = {})
           options ||= {}
           with_timeout_and_retries(options) do
             return if container_status(container_id) == 'stopped'
             begin
-              @hk.stop_container container_id, timeout: 1
-            rescue => e
-              pp 'stop_container', 'exception from rest api stopping container', \
-                 'TODO: suppress the "already stopped" error', 'Or if timeout can be identified, use it directly', e
+              myopts = {}
+              myopts[:force] = options[:force] if options.key? :force
+              myopts[:timeout] = (options[:retry_interval] * 2) if options.key?(:retry_interval) && options[:retry_interval] > 0
+              @hk.stop_container container_id, myopts
+            rescue Hyperkit::BadRequest
               return if container_status(container_id) == 'stopped'
               raise
             end

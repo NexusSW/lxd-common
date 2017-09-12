@@ -64,16 +64,27 @@ Vagrant.configure('2') do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
 
-  # `lxc info` generates the client cert - i don't remember that happening in some instances
-  #   that's 'why' i issue that command, and we may need to manually generate in the future
-  # this runs as root - after the `lxc info` line is a hack to make sure
-  # that that the client cert is in the right place so that you can use the rest api
-  # as the `ubuntu` user - which is your context for `vagrant ssh` commands
+  # - Ubuntu 16.04's included version of LXD is insufficient for the REST Transport
+  #     so we install the latest feature branch (2.17), here, but at this point, only 2.5 is required
+  # - `lxc info` generates the client cert - i don't remember that happening in some instances
+  #     that's 'why' i issue that command, and we may need to manually generate in the future
+  #     aaaaand the feature branch is where i saw that happen - rewriting
+  # - this runs as root - after the cert is generated is a hack to make sure
+  #     that the client cert is in the right place so that you can use the rest api
+  #     as the `ubuntu` user - which is your context for `vagrant ssh` commands
+  # vbox nic: enp0s3
+  # lxc network attach-profile lxdbr0 default
   config.vm.provision 'shell', inline: <<-SHELL
     apt-get update
-    apt-get install -y lxd
+    apt-get install -y -t xenial-backports lxd lxd-client
+
     lxd init --auto --network-address [::] --network-port 8443
-    lxc info
+    lxc network create lxdbr0
+    lxc network attach-profile lxdbr0 default
+
+    mkdir -p ~/.config/lxc
+    openssl req -x509 -newkey rsa:2048 -keyout ~/.config/lxc/client.key.secure -out ~/.config/lxc/client.crt -days 3650 -passout pass:pass -subj "/C=US/ST=Teststate/L=Testcity/O=Testorg/OU=Dev/CN=VagrantBox/emailAddress=dev@test"
+    openssl rsa -in ~/.config/lxc/client.key.secure -out ~/.config/lxc/client.key -passin pass:pass
 
     mkdir -p /home/ubuntu/.config/lxc
     cp ~/.config/lxc/client.* /home/ubuntu/.config/lxc

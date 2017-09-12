@@ -3,6 +3,8 @@
 require 'bundler/setup'
 require 'nexussw/lxd/driver/cli'
 require 'nexussw/lxd/driver/rest'
+require 'nexussw/lxd/transport/cli'
+require 'nexussw/lxd/transport/rest'
 
 # You can add fixtures and/or initialization code here to make experimenting
 # with your gem easier. You can also use a different console, if you like.

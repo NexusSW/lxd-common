@@ -7,6 +7,16 @@ module NexusSW
         def initialize(driver, container_name, config = {})
           super driver, container_name, config
           @hk = driver.hk
+          version_check
+        end
+
+        # the functionality of execute is requiring extensions whichever method I look at it
+        # let's track that in this function.  We'll require the extension 'container_exec_recording'
+        #   for the current incarnation, but when we rewrite for websockets, that'll change
+        #   and for the better it looks like...  it looks like the LTS branch of LXD 'only' really supports the websockets
+        def version_check
+          lxc_info = hk.get('/1.0')[:metadata]
+          raise 'The Rest Transport API requires LXD Version >= Feature release 2.5' unless lxc_info[:api_extensions].index 'container_exec_recording'
         end
 
         attr_reader :hk
@@ -31,7 +41,6 @@ module NexusSW
         #   :return=>0},
         # :may_cancel=>false,
         # :err=>""}
-
         def execute_chunked(command, options = {})
           retval = hk.execute_command(container_name, command, record_output: true)
           begin
