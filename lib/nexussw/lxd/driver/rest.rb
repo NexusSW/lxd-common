@@ -6,6 +6,7 @@ module NexusSW
     class Driver
       class Rest < Driver
         def initialize(rest_endpoint, driver_options = {})
+          @rest_endpoint = rest_endpoint
           hkoptions = (driver_options || {}).merge(
             api_endpoint: rest_endpoint,
             auto_sync: true
@@ -13,7 +14,7 @@ module NexusSW
           @hk = Hyperkit::Client.new(hkoptions)
         end
 
-        attr_reader :hk
+        attr_reader :hk, :rest_endpoint
 
         def create_container(container_name, container_options = {})
           return if container_exists?(container_name)
