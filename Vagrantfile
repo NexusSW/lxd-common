@@ -74,9 +74,9 @@ Vagrant.configure('2') do |config|
   #     as the `ubuntu` user - which is your context for `vagrant ssh` commands
   # vbox nic: enp0s3
   # lxc network attach-profile lxdbr0 default
+  # apt-get install -y -t xenial-backports lxd lxd-client
   config.vm.provision 'shell', inline: <<-SHELL
     apt-get update
-    apt-get install -y -t xenial-backports lxd lxd-client
 
     lxd init --auto --network-address [::] --network-port 8443
     lxc network create lxdbr0

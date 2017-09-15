@@ -5,6 +5,10 @@ module NexusSW
   module LXD
     class Driver
       class Rest < Driver
+        # PARITY note: CLI functions are on an indefinite timeout by default, yet we have a (now) 3 minute (up from 2 by default) request timeout
+        # So if things start timing out in production, in the rest api, that will need increased
+        # Or if the real world shows that we need a timeout on the CLI, we'll adjust that to match
+        REQUEST_TIMEOUT = 30
         def initialize(rest_endpoint, driver_options = {})
           @rest_endpoint = rest_endpoint
           hkoptions = (driver_options || {}).merge(
@@ -12,13 +16,27 @@ module NexusSW
             auto_sync: true
           )
           @hk = Hyperkit::Client.new(hkoptions)
+          # HACK: can't otherwise get at the request timeout because sawyer is in the way
+          # Beware of unused function in hyperkit: reset_agent  If that gets used it'll undo this timeout
+          # The longest i've seen my stressed system take on a create call is just under 3 minutes.
+          # we'll try 3 for now.  should still be reasonable for a stressed production system
+          @hk.agent.instance_variable_get(:@conn).options[:timeout] = REQUEST_TIMEOUT
         end
 
         attr_reader :hk, :rest_endpoint
 
         def create_container(container_name, container_options = {})
           return if container_exists?(container_name)
-          @hk.create_container(container_name, container_options)
+          # we'll break this apart and time it out for those with slow net (and this was my 3 minute stress test case with good net)
+          # parity note: CLI will run indefinitely rather than timeout hence the 0 timeout
+          retval = @hk.create_container(container_name, container_options.merge(sync: false))
+          with_timeout_and_retries timeout: 0, retry_interval: REQUEST_TIMEOUT do
+            begin
+              @hk.wait_for_operation retval[:id]
+            rescue Faraday::TimeoutError => e
+              raise Timeout::Retry.new e # rubocop:disable Style/RaiseArgs
+            end
+          end
           start_container container_name
           container_name
         end
@@ -26,31 +44,34 @@ module NexusSW
         def start_container(container_id)
           return if container_status(container_id) == 'running'
           @hk.start_container(container_id)
+          wait_for_status container_id, 'running'
         end
 
-        # <Hyperkit::BadRequest: 400 - Error: >
         def stop_container(container_id, options = {})
-          options ||= {}
+          return if container_status(container_id) == 'stopped'
+          return @hk.stop_container(container_id, force: true) if options[:force]
+          last_id = nil
+          use_last = false
           with_timeout_and_retries(options) do
             return if container_status(container_id) == 'stopped'
+            unless use_last
+              # Keep resubmitting until the server complains (Stops can be ignored if init is not yet listening for SIGPWR i.e. recently started)
+              begin
+                last_id = @hk.stop_container(container_id, sync: false)[:id]
+              rescue Hyperkit::BadRequest # Happens if a stop command has previously been accepted et. al.
+                raise unless last_id
+                use_last = true
+              end
+            end
             begin
-              myopts = {}
-              myopts[:force] = options[:force] if options.key? :force
-              myopts[:timeout] = (options[:retry_interval] * 2) if options.key?(:retry_interval) && options[:retry_interval] > 0
-              @hk.stop_container container_id, myopts
-            rescue Faraday::TimeoutError # Should not happen, but did on a slow system
+              @hk.wait_for_operation last_id, options[:retry_interval]
+            rescue Faraday::TimeoutError => e
               return if container_status(container_id) == 'stopped'
-              sleep myopts[:timeout] # don't return to the enclosing `with_timeout_and_retries` - if we do the loop will give up - give the slow system a chance to catch up
-              raise
-            rescue Hyperkit::BadRequest
-              return if container_status(container_id) == 'stopped'
+              raise Timeout::Retry.new e if options[:retry_interval] # rubocop:disable Style/RaiseArgs
               raise
             end
           end
-        rescue Timeout::Error
-          return if container_status(container_id) == 'stopped'
-          return @hk.stop_container(container_id, force: true) if options[:force]
-          raise
+          wait_for_status container_id, 'stopped'
         end
 
         def delete_container(container_id)
@@ -73,6 +94,15 @@ module NexusSW
 
         def container(container_id)
           @hk.container container_id
+        end
+
+        private
+
+        def wait_for_status(container_id, newstatus)
+          loop do
+            return if container_status(container_id) == newstatus
+            sleep 0.5
+          end
         end
       end
     end

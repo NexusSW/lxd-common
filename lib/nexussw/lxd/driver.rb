@@ -59,6 +59,9 @@ module NexusSW
       protected
 
       class ::Timeout::Retry < ::Timeout::Error
+        def initialize(msg = nil)
+          super msg if msg
+        end
       end
       # Must specify :retry_interval in order to receive retries
       # And if so, then either :timeout or :retry_count must be specified

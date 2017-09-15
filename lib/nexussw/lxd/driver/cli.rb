@@ -30,20 +30,17 @@ module NexusSW
         end
 
         def stop_container(container_id, options = {})
+          return if container_status(container_id) == 'stopped'
+          return inner_transport.execute("lxc stop #{container_id} --force").error! if options[:force]
           options ||= {} # default behavior: no timeout or retries.  These functions are up to the consumer's context and not really 'sane' defaults
           with_timeout_and_retries(options) do
             return if container_status(container_id) == 'stopped'
-            force = '--force' if options[:force]
-            retval = inner_transport.execute("lxc stop #{container_id} --timeout=#{(options[:retry_interval] || 0) * 2} #{force || ''}")
+            retval = inner_transport.execute("lxc stop #{container_id} --timeout=#{(options[:retry_interval] || 0) * 2}")
             # if an abandoned stop attempt finishes stopping, The above could potentially error with 'container already stopped'
             # so don't raise the error without first double checking
             return if container_status(container_id) == 'stopped'
             retval.error!
           end
-        rescue Timeout::Error
-          return if container_status(container_id) == 'stopped'
-          return inner_transport.execute("lxc stop #{container_id} --force").error! if options[:force]
-          raise
         end
 
         def delete_container(container_id)
