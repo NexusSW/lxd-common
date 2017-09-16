@@ -1,3 +1,5 @@
+require 'nexussw/lxd'
+
 module NexusSW
   module LXD
     class Transport

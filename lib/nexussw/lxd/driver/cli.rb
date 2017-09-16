@@ -15,6 +15,10 @@ module NexusSW
         attr_reader :inner_transport, :driver_options
 
         def create_container(container_name, container_options = {})
+          if container_exists? container_name
+            start_container container_name # Start for Parity with the below logic (`lxc launch` auto starts)
+            return container_name
+          end
           cline = "lxc launch #{image_alias(container_options)} #{container_name}"
           profiles = container_options[:profiles] || []
           profiles.each { |p| cline += " -p #{p}" }
@@ -27,20 +31,28 @@ module NexusSW
         def start_container(container_id)
           return if container_status(container_id) == 'running'
           inner_transport.execute("lxc start #{container_id}").error!
+          wait_for_status container_id, 'running'
         end
 
         def stop_container(container_id, options = {})
+          options ||= {} # default behavior: no timeout or retries.  These functions are up to the consumer's context and not really 'sane' defaults
           return if container_status(container_id) == 'stopped'
           return inner_transport.execute("lxc stop #{container_id} --force").error! if options[:force]
-          options ||= {} # default behavior: no timeout or retries.  These functions are up to the consumer's context and not really 'sane' defaults
-          with_timeout_and_retries(options) do
+          LXD::with_timeout_and_retries(options) do
             return if container_status(container_id) == 'stopped'
-            retval = inner_transport.execute("lxc stop #{container_id} --timeout=#{(options[:retry_interval] || 0) * 2}")
-            # if an abandoned stop attempt finishes stopping, The above could potentially error with 'container already stopped'
-            # so don't raise the error without first double checking
-            return if container_status(container_id) == 'stopped'
-            retval.error!
+            timeout = " --timeout=#{options[:retry_interval] || 0}" if options[:retry_interval]
+            retval = inner_transport.execute("lxc stop #{container_id}#{timeout || ''}")
+            begin
+              retval.error!
+            rescue => e
+              return if container_status(container_id) == 'stopped'
+              # can't distinguish between timeout, or other error.
+              # but if the status call is not popping a 404, and we're not stopped, then a retry is worth it
+              raise Timeout::Retry.new(e) if timeout # rubocop:disable Style/RaiseArgs
+              raise
+            end
           end
+          wait_for_status container_id, 'stopped'
         end
 
         def delete_container(container_id)

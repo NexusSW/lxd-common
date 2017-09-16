@@ -1,6 +1,5 @@
 require 'nexussw/lxd/transport'
 require 'open3'
-require 'timeout'
 
 module NexusSW
   module LXD
@@ -11,7 +10,7 @@ module NexusSW
         end
 
         def execute_chunked(command, options)
-          Timeout.timeout(options[:timeout] || 0) do
+          LXD::with_timeout_and_retries options do
             Open3.popen3(command) do |_stdin, stdout, stderr, th|
               streams = [stdout, stderr]
               loop do
