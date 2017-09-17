@@ -38,7 +38,7 @@ module NexusSW
           options ||= {} # default behavior: no timeout or retries.  These functions are up to the consumer's context and not really 'sane' defaults
           return if container_status(container_id) == 'stopped'
           return inner_transport.execute("lxc stop #{container_id} --force").error! if options[:force]
-          LXD::with_timeout_and_retries(options) do
+          LXD.with_timeout_and_retries(options) do
             return if container_status(container_id) == 'stopped'
             timeout = " --timeout=#{options[:retry_interval] || 0}" if options[:retry_interval]
             retval = inner_transport.execute("lxc stop #{container_id}#{timeout || ''}")

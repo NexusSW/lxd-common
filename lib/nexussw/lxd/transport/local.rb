@@ -10,7 +10,7 @@ module NexusSW
         end
 
         def execute_chunked(command, options)
-          LXD::with_timeout_and_retries options do
+          LXD.with_timeout_and_retries options do
             Open3.popen3(command) do |_stdin, stdout, stderr, th|
               streams = [stdout, stderr]
               loop do

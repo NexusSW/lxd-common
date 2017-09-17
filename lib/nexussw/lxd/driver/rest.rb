@@ -8,7 +8,7 @@ module NexusSW
         # PARITY note: CLI functions are on an indefinite timeout by default, yet we have a 2 minute request timeout
         # So if things start timing out in production, in the rest api, that will need increased
         # Or if the real world shows that we need a timeout on the CLI, we'll adjust that to match
-        REQUEST_TIMEOUT = 60 # upstream default: 120
+        REQUEST_TIMEOUT = 120 # upstream default: 120
         def initialize(rest_endpoint, driver_options = {})
           @rest_endpoint = rest_endpoint
           hkoptions = (driver_options || {}).merge(
@@ -31,7 +31,7 @@ module NexusSW
           # we'll break this apart and time it out for those with slow net (and this was my 3 minute stress test case with good net)
           # parity note: CLI will run indefinitely rather than timeout hence the 0 timeout
           retval = @hk.create_container(container_name, container_options.merge(sync: false))
-          LXD::with_timeout_and_retries timeout: 0 do # we'll rely on the Faraday Timeout for the retry logic so that they're not battling # , retry_interval: REQUEST_TIMEOUT do
+          LXD.with_timeout_and_retries timeout: 0 do # we'll rely on the Faraday Timeout for the retry logic so that they're not battling # , retry_interval: REQUEST_TIMEOUT do
             begin
               @hk.wait_for_operation retval[:id]
             rescue Faraday::TimeoutError => e
@@ -53,7 +53,7 @@ module NexusSW
           return @hk.stop_container(container_id, force: true) if options[:force]
           last_id = nil
           use_last = false
-          LXD::with_timeout_and_retries({ timeout: 0 }.merge(options)) do # timeout: 0 to enable retry functionality
+          LXD.with_timeout_and_retries({ timeout: 0 }.merge(options)) do # timeout: 0 to enable retry functionality
             return if container_status(container_id) == 'stopped'
             unless use_last
               # Keep resubmitting until the server complains (Stops will be ignored if init is not yet listening for SIGPWR i.e. recently started)

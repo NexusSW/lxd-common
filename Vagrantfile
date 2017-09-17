@@ -1,99 +1,83 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
 Vagrant.configure('2') do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
-
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://vagrantcloud.com/search.
   config.vm.box = 'ubuntu/xenial64'
 
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # NOTE: This will enable public access to the opened port
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine and only allow access
-  # via 127.0.0.1 to disable public access
-  # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
-
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
-
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  config.vm.provider 'virtualbox' do |vb|
-    #   # Display the VirtualBox GUI when booting the machine
-    #   vb.gui = true
-    #
-    #   # Customize the amount of memory on the VM:
-    vb.memory = '512'
-  end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
-
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
-
-  # - Ubuntu 16.04's included version of LXD is insufficient for the REST Transport
-  #     so we install the latest feature branch (2.17), here, but at this point, only 2.5 is required
-  # - `lxc info` generates the client cert - i don't remember that happening in some instances
-  #     that's 'why' i issue that command, and we may need to manually generate in the future
-  #     aaaaand the feature branch is where i saw that happen - rewriting
-  # - this runs as root - after the cert is generated is a hack to make sure
-  #     that the client cert is in the right place so that you can use the rest api
-  #     as the `ubuntu` user - which is your context for `vagrant ssh` commands
-  # vbox nic: enp0s3
-  # lxc network attach-profile lxdbr0 default
   # apt-get install -y -t xenial-backports lxd lxd-client
-  config.vm.provision 'shell', inline: <<-SHELL
-    apt-get update
+  config.vm.provision 'chef_apply' do |chef|
+    chef.recipe = <<-RECIPE
+      service 'lxd-bridge'
+      service 'lxd'
+      file '/etc/default/lxd-bridge' do
+        content 'USE_LXD_BRIDGE="true"
+LXD_BRIDGE="lxdbr0"
+LXD_CONFILE=""
+LXD_DOMAIN="lxd"
+LXD_IPV4_ADDR="10.1.4.1"
+LXD_IPV4_NETMASK="255.255.255.0"
+LXD_IPV4_NETWORK="10.1.4.1/24"
+LXD_IPV4_DHCP_RANGE="10.1.4.2,10.1.4.254"
+LXD_IPV4_DHCP_MAX="253"
+LXD_IPV4_NAT="true"
+LXD_IPV6_ADDR=""
+LXD_IPV6_MASK=""
+LXD_IPV6_NETWORK=""
+LXD_IPV6_NAT="false"
+LXD_IPV6_PROXY="true"
+'
+        only_if { File.exist? '/etc/default/lxd-bridge' }
+        notifies :stop, 'service[lxd-bridge]', :immediately
+        notifies :restart, 'service[lxd]', :delayed
+      end
 
-    lxd init --auto --network-address [::] --network-port 8443
-    lxc network create lxdbr0
-    lxc network attach-profile lxdbr0 default
+      execute 'lxd init --auto --network-address [::] --network-port 8443'
+      execute 'lxc network create lxdbr0' do
+        not_if { File.exist? '/etc/default/lxd-bridge' }
+      end
+      execute 'lxc network attach-profile lxdbr0 default' do
+        not_if { File.exist? '/etc/default/lxd-bridge' }
+      end
 
-    mkdir -p ~/.config/lxc
-    openssl req -x509 -newkey rsa:2048 -keyout ~/.config/lxc/client.key.secure -out ~/.config/lxc/client.crt -days 3650 -passout pass:pass -subj "/C=US/ST=Teststate/L=Testcity/O=Testorg/OU=Dev/CN=VagrantBox/emailAddress=dev@test"
-    openssl rsa -in ~/.config/lxc/client.key.secure -out ~/.config/lxc/client.key -passin pass:pass
+      directory '/root/.config'
+      directory '/root/.config/lxc'
+      execute 'openssl req -x509 -newkey rsa:2048 -keyout ~/.config/lxc/client.key.secure -out ~/.config/lxc/client.crt -days 3650 -passout pass:pass -subj "/C=US/ST=Teststate/L=Testcity/O=Testorg/OU=Dev/CN=VagrantBox/emailAddress=dev@test"' do
+        not_if { File.exist? '/root/.config/lxc/client.crt' }
+      end
+      execute 'openssl rsa -in ~/.config/lxc/client.key.secure -out ~/.config/lxc/client.key -passin pass:pass' do
+        not_if { File.exist? '/root/.config/lxc/client.key' }
+      end
 
-    mkdir -p /home/ubuntu/.config/lxc
-    cp ~/.config/lxc/client.* /home/ubuntu/.config/lxc
-    chown -R ubuntu:ubuntu /home/ubuntu/.config
-    lxc config trust add ~/.config/lxc/client.crt
+      directory '/home/ubuntu/.config' do
+        owner 'ubuntu'
+        group 'ubuntu'
+      end
+      directory '/home/ubuntu/.config/lxc' do
+        owner 'ubuntu'
+        group 'ubuntu'
+      end
+      file '/home/ubuntu/.config/lxc/client.crt' do
+        content lazy { IO.read('/root/.config/lxc/client.crt') }
+        owner 'ubuntu'
+        group 'ubuntu'
+      end
+      file '/home/ubuntu/.config/lxc/client.key' do
+        content lazy { IO.read('/root/.config/lxc/client.key') }
+        sensitive true
+        owner 'ubuntu'
+        group 'ubuntu'
+      end
+      execute 'addcert' do
+        command 'lxc config trust add /root/.config/lxc/client.crt'
+        action :nothing
+        subscribes :run, 'file[/home/ubuntu/.config/lxc/client.crt]', :immediately
+      end
 
-    apt-get install -y ruby
-    gem install bundler
-    cd /vagrant
-    bundle install
-  SHELL
+      package 'ruby'
+      gem_package 'bundler'
+      execute 'bundle install' do
+        cwd '/vagrant'
+      end
+    RECIPE
+  end
 end

@@ -38,7 +38,7 @@ module NexusSW
           else
             opid = hk.execute_command(container_name, command, sync: false)[:id]
           end
-          LXD::with_timeout_and_retries({ timeout: 0 }.merge(options)) do
+          LXD.with_timeout_and_retries({ timeout: 0 }.merge(options)) do
             begin
               retval = hk.wait_for_operation opid
               return LXDExecuteResult.new command, options, retval[:metadata][:return].to_i
