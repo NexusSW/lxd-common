@@ -37,11 +37,11 @@ module NexusSW
         def stop_container(container_id, options = {})
           options ||= {} # default behavior: no timeout or retries.  These functions are up to the consumer's context and not really 'sane' defaults
           return if container_status(container_id) == 'stopped'
-          return inner_transport.execute("lxc stop #{container_id} --force").error! if options[:force]
+          return inner_transport.execute("lxc stop #{container_id} --force", capture: false).error! if options[:force]
           LXD.with_timeout_and_retries(options) do
             return if container_status(container_id) == 'stopped'
-            timeout = " --timeout=#{options[:retry_interval] || 0}" if options[:retry_interval]
-            retval = inner_transport.execute("lxc stop #{container_id}#{timeout || ''}")
+            timeout = " --timeout=#{options[:retry_interval]}" if options[:retry_interval]
+            retval = inner_transport.execute("lxc stop #{container_id}#{timeout || ''}", capture: false)
             begin
               retval.error!
             rescue => e
@@ -57,7 +57,7 @@ module NexusSW
 
         def delete_container(container_id)
           return unless container_exists? container_id
-          inner_transport.execute("lxc delete #{container_id} --force").error!
+          inner_transport.execute("lxc delete #{container_id} --force", capture: false).error!
         end
 
         def container_status(container_id)
@@ -83,7 +83,7 @@ module NexusSW
               break if found
             end
             next if found
-            inner_transport.execute "lxc profile create #{name}"
+            inner_transport.execute("lxc profile create #{name}").error!
             tfile = Tempfile.new name
             tfile.close
             begin
@@ -91,7 +91,7 @@ module NexusSW
               begin
                 inner_transport.execute("bash -c 'cat #{tfile.path} | lxc profile edit #{name}'").error!
               ensure
-                inner_transport.execute("rm -rf #{tfile.path}").error!
+                inner_transport.execute("rm -rf #{tfile.path}", capture: false).error!
               end
             ensure
               tfile.unlink

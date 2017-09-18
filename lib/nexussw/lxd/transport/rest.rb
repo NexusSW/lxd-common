@@ -24,13 +24,13 @@ module NexusSW
             _stdout = WebSocket::Client::Simple.connect "#{baseurl}#{retval[:metadata][:fds][:'1']}" do |ws|
               ws.on :message do |msg|
                 close if msg.data.empty?
-                yield(msg.data, nil, options)
+                yield(msg.data, nil)
               end
             end
             _stderr = WebSocket::Client::Simple.connect "#{baseurl}#{retval[:metadata][:fds][:'2']}" do |ws|
               ws.on :message do |msg|
                 close if msg.data.empty?
-                yield(nil, msg.data, options)
+                yield(nil, msg.data)
               end
             end
             # websockets stall until fd 0 (or all?) is connected

@@ -28,7 +28,7 @@ module NexusSW
         def read_file(path)
           tfile = Tempfile.new(container_name)
           tfile.close
-          retval = execute("#{@container_name}#{path} #{tfile.path}", subcommand: 'file pull')
+          retval = execute("#{@container_name}#{path} #{tfile.path}", subcommand: 'file pull', capture: false)
           return '' if retval.exitstatus == 1
           retval.error!
           return inner_transport.read_file tfile.path
@@ -46,7 +46,7 @@ module NexusSW
           tfile = Tempfile.new(container_name)
           tfile.close
           inner_transport.write_file tfile.path, content
-          execute("#{tfile.path} #{container_name}#{path}", subcommand: 'file push').error!
+          execute("#{tfile.path} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
         ensure
           if tfile
             begin
@@ -61,7 +61,7 @@ module NexusSW
           tfile = Tempfile.new(container_name) if punt
           tfile.close if tfile
           localname = tfile ? tfile.path : local_path
-          execute("#{container_name}#{path} #{localname}", subcommand: 'file pull').error!
+          execute("#{container_name}#{path} #{localname}", subcommand: 'file pull', capture: false).error!
           inner_transport.download_file tfile.path, local_path if tfile
         ensure
           if tfile
@@ -78,7 +78,7 @@ module NexusSW
           tfile.close if tfile
           localname = tfile ? tfile.path : local_path
           inner_transport.upload_file local_path, tfile.path if tfile
-          execute("#{localname} #{container_name}#{path}", subcommand: 'file push').error!
+          execute("#{localname} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
         ensure
           if tfile
             begin

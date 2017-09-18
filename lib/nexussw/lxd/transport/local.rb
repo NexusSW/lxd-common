@@ -25,7 +25,7 @@ module NexusSW
                 rescue IO::WaitReadable
                   IO.select(streams, nil, streams, 1) unless stdout_chunk
                 end
-                yield(stdout_chunk, stderr_chunk, options)
+                yield(stdout_chunk, stderr_chunk) if block_given?
                 return LXDExecuteResult.new(command, options, th.value.exitstatus) if th.value.exited? && stdout.eof? && stderr.eof?
               end
             end

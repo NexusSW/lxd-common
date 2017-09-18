@@ -59,7 +59,7 @@ end
 
 shared_examples 'Container Shutdown' do
   it 'can stop a container' do
-    nx_driver.stop_container test_name, timeout: 60, retry_interval: 2
+    nx_driver.stop_container test_name, timeout: 60, retry_interval: 5
     expect(nx_driver.container_status(test_name)).to eq 'stopped'
     sleep 5 # lxd gets snarky if you stop/start too fast
   end
@@ -95,8 +95,21 @@ describe NexusSW::LXD::Driver do
     include_examples 'Transport Functions'
     it 'can set up a nested LXD' do
       # Bootup race condition on my slow laptop - wait for socket to become available
-      # expect { transport.execute('bash -c "while ! [ -a /var/lib/lxd/unix.socket ]; do sleep 1; done; lxd init --auto"').error! }.not_to raise_error
-      expect { transport.execute('bash -c "lxd waitready; lxd init --auto"').error! }.not_to raise_error
+      #
+      # Got this once:
+      # Failure/Error: expect { transport.execute('bash -c "lxd waitready; lxd init --auto"').error! }.not_to raise_error
+      #
+      #        expected no Exception, got #<RuntimeError: Error: 'bash -c "lxd waitready; lxd init --auto"' failed with exit code 1.
+      #        STDERR: er...Get http://unix.socket/1.0: dial unix /var/lib/lxd/unix.socket: connect: no such file or directory
+      #        > with backtrace:
+      #          # ./lib/nexussw/lxd/transport.rb:36:in `error!'
+      #          # ./spec/lxd/common_spec.rb:99:in `block (4 levels) in <top (required)>'
+      #          # ./spec/lxd/common_spec.rb:99:in `block (3 levels) in <top (required)>'
+      #
+      # going back to the while loop
+      #
+      # expect { transport.execute('bash -c "lxd waitready; lxd init --auto"').error! }.not_to raise_error
+      expect { transport.execute('bash -c "while ! [ -a /var/lib/lxd/unix.socket ]; do sleep 1; done; lxd init --auto"').error! }.not_to raise_error
     end
   end
   context 'Nested CLI Interface' do

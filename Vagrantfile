@@ -27,8 +27,8 @@ LXD_IPV6_NAT="false"
 LXD_IPV6_PROXY="true"
 '
         only_if { File.exist? '/etc/default/lxd-bridge' }
-        notifies :stop, 'service[lxd-bridge]', :immediately
-        notifies :restart, 'service[lxd]', :delayed
+        notifies :stop, 'service[lxd-bridge]', :before
+        notifies :restart, 'service[lxd]', :immediately
       end
 
       execute 'lxd init --auto --network-address [::] --network-port 8443'
@@ -45,6 +45,7 @@ LXD_IPV6_PROXY="true"
         not_if { File.exist? '/root/.config/lxc/client.crt' }
       end
       execute 'openssl rsa -in ~/.config/lxc/client.key.secure -out ~/.config/lxc/client.key -passin pass:pass' do
+        only_if { File.exist? '/root/.config/lxc/client.key.secure' }
         not_if { File.exist? '/root/.config/lxc/client.key' }
       end
 
