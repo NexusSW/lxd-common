@@ -1,5 +1,7 @@
 sudo: true
 language: ruby
 rvm:
-  - 2.0.0
-before_install: gem install bundler -v 1.13.6
+  - 2.1.0
+before_install:
+  - curl -L https://www.chef.io/chef/install.sh | sudo bash
+  - sudo chef-apply spec/provision_recipe.rb
