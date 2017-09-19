@@ -2,11 +2,15 @@
 # vi: set ft=ruby :
 
 Vagrant.configure('2') do |config|
-  config.vm.box = 'ubuntu/xenial64'
+  # config.vm.box = 'ubuntu/xenial64'
+  config.vm.box = 'ubuntu/trusty64'
 
   # apt-get install -y -t xenial-backports lxd lxd-client
   config.vm.provision 'chef_apply' do |chef|
     chef.recipe = <<-RECIPE
+      apt_package 'lxd' do
+        default_release node['lsb']['codename'] + '-backports'
+      end
       service 'lxd-bridge'
       service 'lxd'
       file '/etc/default/lxd-bridge' do
@@ -74,10 +78,26 @@ LXD_IPV6_PROXY="true"
         subscribes :run, 'file[/home/ubuntu/.config/lxc/client.crt]', :immediately
       end
 
-      package 'ruby'
+      apt_repository 'ruby-ng' do
+        uri 'ppa:brightbox/ruby-ng'
+        distribution node['lsb']['codename']
+        only_if { node['lsb']['codename'] == 'trusty' }
+      end
+      apt_update 'update'
+      package %w[ruby git]
+      package 'ruby2.4' do
+        only_if { node['lsb']['codename'] == 'trusty' }
+      end
       gem_package 'bundler'
       execute 'bundle install' do
         cwd '/vagrant'
+      end
+
+      group 'lxd' do
+        action :modify
+        append true
+        members 'vagrant'
+        only_if { node['etc']['passwd']['vagrant'] }
       end
     RECIPE
   end
