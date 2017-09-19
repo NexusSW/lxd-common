@@ -43,10 +43,10 @@ end
 
 directory '/root/.config'
 directory '/root/.config/lxc'
-execute 'openssl req -x509 -newkey rsa:2048 -keyout ~/.config/lxc/client.key.secure -out ~/.config/lxc/client.crt -days 3650 -passout pass:pass -subj "/C=US/ST=Teststate/L=Testcity/O=Testorg/OU=Dev/CN=VagrantBox/emailAddress=dev@test"' do
+execute 'openssl req -x509 -newkey rsa:2048 -keyout /root/.config/lxc/client.key.secure -out /root/.config/lxc/client.crt -days 3650 -passout pass:pass -subj "/C=US/ST=Teststate/L=Testcity/O=Testorg/OU=Dev/CN=VagrantBox/emailAddress=dev@test"' do
   not_if { File.exist? '/root/.config/lxc/client.crt' }
 end
-execute 'openssl rsa -in ~/.config/lxc/client.key.secure -out ~/.config/lxc/client.key -passin pass:pass' do
+execute 'openssl rsa -in /root/.config/lxc/client.key.secure -out /root/.config/lxc/client.key -passin pass:pass' do
   only_if { File.exist? '/root/.config/lxc/client.key.secure' }
   not_if { File.exist? '/root/.config/lxc/client.key' }
 end
