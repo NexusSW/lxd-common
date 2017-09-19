@@ -80,28 +80,26 @@ execute 'addcert' do
   subscribes :run, 'file[client.crt]', :immediately
 end
 
-apt_repository 'ruby-ng' do
-  uri 'ppa:brightbox/ruby-ng'
-  distribution node['lsb']['codename']
-  only_if { node['lsb']['codename'] == 'trusty' }
-  not_if { node['username'] == 'travis' }
-end
-apt_update 'update'
-package %w(ruby git)
-package 'ruby2.1' do
-  only_if { node['lsb']['codename'] == 'trusty' }
-  not_if { node['username'] == 'travis' }
-end
-gem_package 'bundler' do
-  not_if { node['username'] == 'travis' }
-end
-execute 'bundle install' do
-  cwd '/vagrant'
-  not_if { node['username'] == 'travis' }
+unless node['username'] == 'travis'
+  apt_repository 'ruby-ng' do
+    uri 'ppa:brightbox/ruby-ng'
+    distribution node['lsb']['codename']
+    only_if { node['lsb']['codename'] == 'trusty' }
+  end
+  apt_update 'update'
+  package %w(ruby git)
+  package 'ruby2.1' do
+    only_if { node['lsb']['codename'] == 'trusty' }
+  end
+  gem_package 'bundler'
+  execute 'bundle install' do
+    cwd '/vagrant'
+  end
 end
 
 group 'lxd' do
   action :modify
   append true
   members node['username']
+  notifies :restart, 'service[lxd]', :immediately
 end
