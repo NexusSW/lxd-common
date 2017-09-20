@@ -5,6 +5,5 @@ rvm:
 before_install:
   - curl -L https://www.chef.io/chef/install.sh | sudo bash
   - sudo chef-apply spec/provision_recipe.rb
-  - id
-  - newgrp -
-  - id
+script:
+  - sudo su -l travis -c 'bundle exec rake'
