@@ -62,6 +62,7 @@ execute 'addcert' do
   action :nothing
   subscribes :run, 'execute[client.crt]', :immediately
 end
+execute "chown -R #{node['username']}:#{node['username']} /home/#{node['username']}/.config/lxc"
 
 unless node['username'] == 'travis'
   apt_repository 'ruby-ng' do
