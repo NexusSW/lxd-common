@@ -6,9 +6,12 @@ node.override['username'] = if node['etc']['passwd']['travis']
                               'ubuntu'
                             end
 
-apt_package 'lxd' do
-  default_release node['lsb']['codename'] + '-backports'
-end
+apt_update 'update'
+execute "apt-get install -y -t #{node['lsb']['codename']}-backports lxd lxd-client"
+# apt_package %w(lxd lxd-client) do
+#   # default_release (node['lsb']['codename'] + '-backports')
+#   options "-t #{node['lsb']['codename']}-backports"
+# end
 service 'lxd-bridge'
 service 'lxd'
 file '/etc/default/lxd-bridge' do
@@ -69,8 +72,8 @@ unless node['username'] == 'travis'
     uri 'ppa:brightbox/ruby-ng'
     distribution node['lsb']['codename']
     only_if { node['lsb']['codename'] == 'trusty' }
+    notifies :update, 'apt_update[update]', :immediately
   end
-  apt_update 'update'
   package %w(ruby git)
   package 'ruby2.1' do
     only_if { node['lsb']['codename'] == 'trusty' }
