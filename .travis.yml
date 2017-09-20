@@ -5,8 +5,5 @@ rvm:
 before_install:
   - curl -L https://www.chef.io/chef/install.sh | sudo bash
   - sudo chef-apply spec/provision_recipe.rb
-  - sudo cat /etc/passwd
-  - sudo cat /etc/group
-  - echo $USER
-  - sudo usermod -a -G lxd $USER
-  - sudo cat /etc/group
+  - exec sudo su -l travis
+  

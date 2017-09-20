@@ -101,5 +101,4 @@ group 'lxd' do
   action :modify
   append true
   members node['username']
-  notifies :restart, 'service[lxd]', :immediately
 end
