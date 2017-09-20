@@ -6,4 +6,6 @@ before_install:
   - curl -L https://www.chef.io/chef/install.sh | sudo bash
   - sudo chef-apply spec/provision_recipe.rb
 script:
-  - sudo su -l travis -c "cd $(pwd) ; rvm use 2.1.0 ; bundle exec rake"
+  - sudo ls -alR /root/.config/
+  - ls -alR ~/.config/
+  - sudo su -l travis -c "cd $(pwd) ; rvm use 2.1.0 ; rake"
