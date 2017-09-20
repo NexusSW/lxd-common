@@ -6,4 +6,4 @@ before_install:
   - curl -L https://www.chef.io/chef/install.sh | sudo bash
   - sudo chef-apply spec/provision_recipe.rb
 script:
-  - sudo su -l travis -c 'bundle exec rake'
+  - sudo su travis -p -c 'pwd; cd NexusSW/lxd-common; bundle exec rake'
