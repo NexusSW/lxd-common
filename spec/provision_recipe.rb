@@ -62,13 +62,13 @@ directory 'config/lxc' do
   group node['username']
 end
 file 'client.crt' do
-  content lazy { IO.read('/root/.config/lxc/client.crt') }
+  content lazy { File.read('/root/.config/lxc/client.crt') }
   path "/home/#{node['username']}/.config/lxc/client.crt"
   owner node['username']
   group node['username']
 end
 file 'client.key' do
-  content lazy { IO.read('/root/.config/lxc/client.key') }
+  content lazy { File.read('/root/.config/lxc/client.key') }
   path "/home/#{node['username']}/.config/lxc/client.key"
   sensitive true
   owner node['username']
@@ -94,6 +94,7 @@ unless node['username'] == 'travis'
   gem_package 'bundler'
   execute 'bundle install' do
     cwd '/vagrant'
+    not_if { node['username'] == 'vagrant' }
   end
 end
 
