@@ -3,17 +3,21 @@ language: ruby
 rvm:
 #  - 1.9.? # installed on Trusty by default # Unimportant - noted for posterity
   - 2.1.0 # minimum version of one of my dependencies - I forget which, but I'm willing to at least consider dodging this one if it becomes constrictive - I'd rather say 2.0 is reasonable
-#  - 2.3.1 # 2.3.1p112 version installed on Xenial from standard repos at this time ***** do NOT mark 'allow fail' until Xenial is no longer LTS
-#  - 2.4.1 # 2.4.1p111 Installed embedded in current Chef DK 2.1.11 # This one will be important for consumers
-#  - 2.4.? # Latest Greatest at the time of this writing - *****  Make sure to mark 'allow fail'
+  - 2.3.1 # 2.3.1p112 version installed on Xenial from standard repos at this time ***** do NOT mark 'allow fail' until Xenial is no longer LTS
+  - 2.4.1 # 2.4.1p111 Installed embedded in current Chef DK 2.1.11 # This one will be important for consumers
+  - ruby-head
 # We'll add more as particular bugs surface
+# RUBY_VERSION=ruby-2.1.0
+matrix:
+  allow_failures:
+    - rvm: ruby-head
 before_install:
   - curl -L https://www.chef.io/chef/install.sh | sudo bash
   - sudo chef-apply spec/provision_recipe.rb
   - ip a
   - ip r
 script:
-  - set
+#  - set # woah! ok I won't do that again unless needed
   - rake mock
-  - sudo su -l $USER -c "cd $(pwd) ; rvm use 2.1.0 ; rake spec"
+  - sudo su -l $USER -c "cd $(pwd) ; rvm use ${RUBY_VERSION/ruby-/} ; rake spec"
   
