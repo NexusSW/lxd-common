@@ -41,43 +41,26 @@ execute 'lxc network attach-profile lxdbr0 default' do
   not_if { File.exist? '/etc/default/lxd-bridge' }
 end
 
-directory '/root/.config'
-directory '/root/.config/lxc'
-execute 'openssl req -x509 -newkey rsa:2048 -keyout /root/.config/lxc/client.key.secure -out /root/.config/lxc/client.crt -days 3650 -passout pass:pass -subj "/C=US/ST=Teststate/L=Testcity/O=Testorg/OU=Dev/CN=VagrantBox/emailAddress=dev@test"' do
-  not_if { File.exist? '/root/.config/lxc/client.crt' }
-end
-execute 'openssl rsa -in /root/.config/lxc/client.key.secure -out /root/.config/lxc/client.key -passin pass:pass' do
-  only_if { File.exist? '/root/.config/lxc/client.key.secure' }
-  not_if { File.exist? '/root/.config/lxc/client.key' }
-end
-
-directory 'config' do
-  path "/home/#{node['username']}/.config"
+directory "/home/#{node['username']}/.config" do
   owner node['username']
   group node['username']
 end
-directory 'config/lxc' do
-  path "/home/#{node['username']}/.config/lxc"
+directory "/home/#{node['username']}/.config/lxc" do
   owner node['username']
   group node['username']
 end
-file 'client.crt' do
-  content lazy { File.read('/root/.config/lxc/client.crt') }
-  path "/home/#{node['username']}/.config/lxc/client.crt"
-  owner node['username']
-  group node['username']
+execute 'client.crt' do
+  command "openssl req -x509 -newkey rsa:2048 -keyout /home/#{node['username']}/.config/lxc/client.key.secure -out /home/#{node['username']}/.config/lxc/client.crt -days 3650 -passout pass:pass -subj '/C=US/ST=Teststate/L=Testcity/O=Testorg/OU=Dev/CN=VagrantBox/emailAddress=dev@test'"
+  not_if { File.exist? "/home/#{node['username']}/.config/lxc/client.crt" }
 end
-file 'client.key' do
-  content lazy { File.read('/root/.config/lxc/client.key') }
-  path "/home/#{node['username']}/.config/lxc/client.key"
-  sensitive true
-  owner node['username']
-  group node['username']
+execute "openssl rsa -in /home/#{node['username']}/.config/lxc/client.key.secure -out /home/#{node['username']}/.config/lxc/client.key -passin pass:pass" do
+  only_if { File.exist? "/home/#{node['username']}/.config/lxc/client.key.secure" }
+  not_if { File.exist? "/home/#{node['username']}/.config/lxc/client.key" }
 end
 execute 'addcert' do
-  command 'lxc config trust add /root/.config/lxc/client.crt'
+  command "lxc config trust add /home/#{node['username']}/.config/lxc/client.crt"
   action :nothing
-  subscribes :run, 'file[client.crt]', :immediately
+  subscribes :run, 'execute[client.crt]', :immediately
 end
 
 unless node['username'] == 'travis'
@@ -94,7 +77,6 @@ unless node['username'] == 'travis'
   gem_package 'bundler'
   execute 'bundle install' do
     cwd '/vagrant'
-    not_if { node['username'] == 'vagrant' }
   end
 end
 
