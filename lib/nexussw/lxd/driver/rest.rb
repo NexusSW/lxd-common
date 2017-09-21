@@ -5,20 +5,20 @@ module NexusSW
   module LXD
     class Driver
       class Rest < Driver
-        # PARITY note: CLI functions are on an indefinite timeout by default, yet we have a 2 minute request timeout
-        # So if things start timing out in production, in the rest api, that will need increased
-        # Or if the real world shows that we need a timeout on the CLI, we'll adjust that to match
-        REQUEST_TIMEOUT = 120 # upstream default: 120
-        def initialize(rest_endpoint, driver_options = {})
+        # PARITY note: CLI functions are on an indefinite timeout by default, yet we have a 2 minute socket read timeout
+        # Leaving it alone, for now, on calls that are quick in nature
+        # Adapting on known long running calls such as create, stop, execute
+        # REQUEST_TIMEOUT = 120 # upstream default: 120
+        def initialize(rest_endpoint, driver_options = {}, inner_driver = nil)
           @rest_endpoint = rest_endpoint
           hkoptions = (driver_options || {}).merge(
             api_endpoint: rest_endpoint,
             auto_sync: true
           )
-          @hk = Hyperkit::Client.new(hkoptions)
+          @hk = inner_driver || Hyperkit::Client.new(hkoptions)
           # HACK: can't otherwise get at the request timeout because sawyer is in the way
           # Beware of unused function in hyperkit: reset_agent  If that gets used it'll undo this timeout
-          @hk.agent.instance_variable_get(:@conn).options[:timeout] = REQUEST_TIMEOUT
+          # unneeded while default valued: @hk.agent.instance_variable_get(:@conn).options[:timeout] = REQUEST_TIMEOUT
         end
 
         attr_reader :hk, :rest_endpoint
@@ -55,16 +55,16 @@ module NexusSW
           use_last = false
           LXD.with_timeout_and_retries({ timeout: 0 }.merge(options)) do # timeout: 0 to enable retry functionality
             return if container_status(container_id) == 'stopped'
-            unless use_last
-              # Keep resubmitting until the server complains (Stops will be ignored if init is not yet listening for SIGPWR i.e. recently started)
-              begin
-                last_id = @hk.stop_container(container_id, sync: false)[:id]
-              rescue Hyperkit::BadRequest # Happens if a stop command has previously been accepted as well as other reasons.  handle that on next line
-                raise unless last_id # if we have a last_id then a prior stop command has successfully initiated so we'll just wait on that one
-                use_last = true
-              end
-            end
             begin
+              unless use_last
+                # Keep resubmitting until the server complains (Stops will be ignored/hang if init is not yet listening for SIGPWR i.e. recently started)
+                begin
+                  last_id = @hk.stop_container(container_id, sync: false)[:id] # TODO: this 'could' hang for 2 minutes?  and then we'd never get a last_id if that's where the hang happens, and then it 'could' error on retry
+                rescue Hyperkit::BadRequest # Happens if a stop command has previously been accepted as well as other reasons.  handle that on next line
+                  raise unless last_id # if we have a last_id then a prior stop command has successfully initiated so we'll just wait on that one
+                  use_last = true
+                end
+              end
               @hk.wait_for_operation last_id # , options[:retry_interval]
             rescue Faraday::TimeoutError => e
               return if container_status(container_id) == 'stopped'
