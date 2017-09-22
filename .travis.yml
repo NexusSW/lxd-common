@@ -1,5 +1,8 @@
 sudo: true
 language: ruby
+env:
+  global:
+    - CC_TEST_REPORTER_ID=63c6ff301d07c9c3ad15182d594bb0b9541b75dbc185e6f210a949481824d099
 rvm:
 #  - 1.9.? # installed on Trusty by default # Unimportant - noted for posterity
   - 2.1.0 # minimum version of one of my dependencies - I forget which, but I'm willing to at least consider dodging this one if it becomes constrictive - I'd rather say 2.0 is reasonable
@@ -16,8 +19,13 @@ before_install:
   - sudo chef-apply spec/provision_recipe.rb
   - ip a
   - ip r
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
 script:
 #  - set # woah! ok I won't do that again unless needed
   - rake mock
   - sudo su -l $USER -c "cd $(pwd) ; rvm use ${RUBY_VERSION/ruby-/} ; rake spec"
-  
+after_script:
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
