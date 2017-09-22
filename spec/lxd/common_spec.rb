@@ -8,7 +8,7 @@ describe NexusSW::LXD::Driver do
     let(:test_name) { 'lxd-cli-driver-test' }
     let(:nx_driver) { NexusSW::LXD::Driver::CLI.new ::NexusSW::LXD::Transport::Local.new }
     include_examples 'Container Startup'
-    let(:transport) { NexusSW::LXD::Transport::CLI.new nx_driver, NexusSW::LXD::Transport::Local.new, test_name }
+    let(:transport) { NexusSW::LXD::Transport::CLI.new NexusSW::LXD::Transport::Local.new, test_name }
     include_examples 'Transport Functions'
     include_examples 'Container Shutdown'
   end
@@ -41,7 +41,7 @@ describe NexusSW::LXD::Driver do
     let(:test_name) { 'lxd-nested-cli-driver-test' }
     let(:nx_driver) { NexusSW::LXD::Driver::CLI.new rest_transport }
     include_examples 'Container Startup'
-    let(:transport) { NexusSW::LXD::Transport::CLI.new nx_driver, rest_transport, test_name }
+    let(:transport) { NexusSW::LXD::Transport::CLI.new rest_transport, test_name }
     include_examples 'Transport Functions'
     include_examples 'Container Shutdown'
   end

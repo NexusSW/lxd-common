@@ -3,13 +3,12 @@ require 'nexussw/lxd'
 module NexusSW
   module LXD
     class Transport
-      def initialize(driver, container_name, config = {})
-        @lxd = driver
+      def initialize(container_name, config = {})
         @container_name = container_name
         @config = config
       end
 
-      attr_reader :lxd, :container_name, :config
+      attr_reader :container_name, :config
 
       class LXDExecuteResult
         def initialize(command, options, exitstatus)
@@ -69,10 +68,6 @@ module NexusSW
 
       def upload_file(_local_path, _path)
         raise 'NexusSW::LXD::Transport.upload_file not implemented'
-      end
-
-      def available?
-        lxd.container_status(container_name) == 'running'
       end
 
       protected

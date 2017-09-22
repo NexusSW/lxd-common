@@ -6,7 +6,7 @@ module NexusSW
     class Transport
       class Mock < Transport
         def initialize(config = {})
-          super self, 'mock:', config
+          super 'mock:', config
         end
 
         @@containers = {} # rubocop:disable Style/ClassVars

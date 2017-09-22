@@ -6,7 +6,7 @@ module NexusSW
     class Transport
       class Local < Transport
         def initialize(config = {})
-          super self, 'local:', config
+          super 'local:', config
         end
 
         def execute_chunked(command, options)

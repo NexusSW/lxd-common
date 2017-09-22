@@ -6,7 +6,7 @@ describe NexusSW::LXD::Driver do
     let(:test_name) { 'lxd-cli-driver-test' }
     let(:nx_driver) { NexusSW::LXD::Driver::CLI.new ::NexusSW::LXD::Transport::Mock.new }
     include_examples 'Container Startup'
-    let(:transport) { NexusSW::LXD::Transport::CLI.new nx_driver, NexusSW::LXD::Transport::Mock.new, test_name }
+    let(:transport) { NexusSW::LXD::Transport::CLI.new NexusSW::LXD::Transport::Mock.new, test_name }
     include_examples 'Transport Functions'
     include_examples 'Container Shutdown'
   end

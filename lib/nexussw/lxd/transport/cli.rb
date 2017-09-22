@@ -7,8 +7,8 @@ module NexusSW
   module LXD
     class Transport
       class CLI < Transport
-        def initialize(driver, remote_transport, container_name, config = {})
-          super(driver, container_name, config)
+        def initialize(remote_transport, container_name, config = {})
+          super(container_name, config)
           @inner_transport = remote_transport
           @punt = !inner_transport.is_a?(::NexusSW::LXD::Transport::Local)
         end

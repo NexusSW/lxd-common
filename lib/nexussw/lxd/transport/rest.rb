@@ -6,19 +6,20 @@ module NexusSW
     class Transport
       class Rest < Transport
         def initialize(driver, container_name, config = {})
-          super driver, container_name, config
-          raise "The rest transport requires the Rest Driver.  You supplied #{driver}" unless driver.respond_to? :hk # driver.is_a? NexusSW::LXD::Driver::Rest
+          super container_name, config
+          raise "The rest transport requires the Rest Driver.  You supplied #{driver}" unless driver.respond_to?(:hk) && driver.respond_to?(:rest_endpoint) # driver.is_a? NexusSW::LXD::Driver::Rest
+          @rest_endpoint = driver.rest_endpoint
           @hk = driver.hk
         end
 
-        attr_reader :hk
+        attr_reader :hk, :rest_endpoint
 
         def execute_chunked(command, options = {})
           opid = nil
           if block_given? # Allow for an optimized case that doesn't require the support of 3 new websocket connections
             retval = hk.execute_command(container_name, command, wait_for_websocket: true, interactive: false, sync: false)
             opid = retval[:id]
-            baseurl = lxd.rest_endpoint
+            baseurl = rest_endpoint
             baseurl += '/' unless baseurl.end_with? '/'
             baseurl += "1.0/operations/#{retval[:id]}/websocket?secret="
             _stdout = WebSocket::Client::Simple.connect "#{baseurl}#{retval[:metadata][:fds][:'1']}" do |ws|
