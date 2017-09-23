@@ -1,4 +1,5 @@
-# LXD::Common [![Build Status](https://travis-ci.org/NexusSW/lxd-common.svg?branch=master)](https://travis-ci.org/NexusSW/lxd-common)
+# LXD::Common [![Build Status](https://travis-ci.org/NexusSW/lxd-common.svg?branch=master)](https://travis-ci.org/NexusSW/lxd-common)[![Dependency Status](https://gemnasium.com/badges/github.com/NexusSW/lxd-common.svg)](https://gemnasium.com/github.com/NexusSW/lxd-common)
+
 [![Code Climate](https://codeclimate.com/github/NexusSW/lxd-common/badges/gpa.svg)](https://codeclimate.com/github/NexusSW/lxd-common)
 [![Test Coverage](https://codeclimate.com/github/NexusSW/lxd-common/badges/coverage.svg)](https://codeclimate.com/github/NexusSW/lxd-common/coverage)
 [![Issue Count](https://codeclimate.com/github/NexusSW/lxd-common/badges/issue_count.svg)](https://codeclimate.com/github/NexusSW/lxd-common)
