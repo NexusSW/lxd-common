@@ -40,7 +40,7 @@ execute 'lxd init --auto --network-address [::] --network-port 8443'
 execute 'create-bridge' do
   command 'lxc network create lxdbr0'
   not_if { File.exist? '/etc/default/lxd-bridge' }
-  not_if 'grep "lxdbr0" <(ip l)'
+  not_if 'ip l show lxdbr0'
 end
 execute 'use-bridge' do
   command 'lxc network attach-profile lxdbr0 default'
