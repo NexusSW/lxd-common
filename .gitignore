@@ -10,3 +10,4 @@
 .directory
 .vagrant
 *console.log
+/.kitchen/
