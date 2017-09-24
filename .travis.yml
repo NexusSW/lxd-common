@@ -1,8 +1,5 @@
 sudo: true
 language: ruby
-env:
-  global:
-    - CC_TEST_REPORTER_ID=63c6ff301d07c9c3ad15182d594bb0b9541b75dbc185e6f210a949481824d099
 rvm:
 #  - 1.9.? # installed on Trusty by default # Unimportant - noted for posterity
   - 2.1.0 # minimum version of one of my dependencies - I forget which, but I'm willing to at least consider dodging this one if it becomes constrictive - I'd rather say 2.0 is reasonable
