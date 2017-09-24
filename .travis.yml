@@ -11,22 +11,21 @@ rvm:
   - ruby-head
 # We'll add more as particular bugs surface
 # RUBY_VERSION=ruby-2.1.0
+env:
+  - RAKE_CMD=mock
+  - RAKE_CMD=spec
 matrix:
   allow_failures:
     - rvm: ruby-head
 before_install:
-  - curl -L https://www.chef.io/chef/install.sh | sudo bash
-  - sudo chef-apply spec/provision_recipe.rb
-  - ip a
-  - ip r
+  - if [[ $RAKE_CMD == 'spec' ]]; then { curl -L https://www.chef.io/chef/install.sh | sudo bash; } && sudo chef-apply spec/provision_recipe.rb && ip a && ip r; fi
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
 script:
 #  - set # woah! ok I won't do that again unless needed
-  - rake mock
-  - sudo su -l $USER -c "cd $(pwd) ; rvm use ${RUBY_VERSION/ruby-/} ; rake spec"
+  - sudo su -l $USER -c "cd $(pwd) ; rvm use ${RUBY_VERSION/ruby-/} ; rake $RAKE_CMD"
 after_script:
 #  - if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
