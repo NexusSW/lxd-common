@@ -10,3 +10,5 @@
 .directory
 .vagrant
 *console.log
+.kitchen/
+.kitchen.local.yml
