@@ -33,8 +33,8 @@ describe NexusSW::LXD::Driver do
       #
       # going back to the while loop
       #
-      # expect { transport.execute('bash -c "lxd waitready; lxd init --auto"').error! }.not_to raise_error
-      expect { transport.execute('bash -c "while ! [ -a /var/lib/lxd/unix.socket ]; do sleep 1; done; lxd init --auto"').error! }.not_to raise_error
+      # expect { test_transport.execute('bash -c "lxd waitready; lxd init --auto"').error! }.not_to raise_error
+      expect { test_transport.execute('bash -c "while ! [ -a /var/lib/lxd/unix.socket ]; do sleep 1; done; lxd init --auto"').error! }.not_to raise_error
     end
   end
   context 'Nested CLI Interface' do
