@@ -37,11 +37,15 @@ LXD_IPV6_PROXY="true"
 end
 
 execute 'lxd init --auto --network-address [::] --network-port 8443'
-execute 'lxc network create lxdbr0' do
+execute 'create-bridge' do
+  command 'lxc network create lxdbr0'
   not_if { File.exist? '/etc/default/lxd-bridge' }
+  not_if 'grep "lxdbr0" <(ip l)'
 end
-execute 'lxc network attach-profile lxdbr0 default' do
-  not_if { File.exist? '/etc/default/lxd-bridge' }
+execute 'use-bridge' do
+  command 'lxc network attach-profile lxdbr0 default'
+  action :nothing
+  subscribes :run, 'execute[create-bridge]', :immediately
 end
 
 directory "/home/#{node['username']}/.config" do
@@ -74,8 +78,8 @@ unless node['username'] == 'travis'
     only_if { node['lsb']['codename'] == 'trusty' }
     notifies :update, 'apt_update[update]', :immediately
   end
-  package %w(ruby git)
-  package 'ruby2.1' do
+  package %w(ruby ruby-dev git make gcc)
+  package %w(ruby2.1 ruby2.1-dev) do
     only_if { node['lsb']['codename'] == 'trusty' }
   end
   gem_package 'bundler'
