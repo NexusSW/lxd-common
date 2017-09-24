@@ -6,17 +6,17 @@ describe NexusSW::LXD::Driver do
   let(:rest_transport) { NexusSW::LXD::Transport::Rest.new rest_driver, rest_name }
   context 'Local CLI Interface' do
     let(:test_name) { 'lxd-cli-driver-test' }
-    let(:nx_driver) { NexusSW::LXD::Driver::CLI.new ::NexusSW::LXD::Transport::Local.new }
+    let(:test_driver) { NexusSW::LXD::Driver::CLI.new ::NexusSW::LXD::Transport::Local.new }
     include_examples 'Container Startup'
-    let(:transport) { NexusSW::LXD::Transport::CLI.new NexusSW::LXD::Transport::Local.new, test_name }
+    let(:test_transport) { NexusSW::LXD::Transport::CLI.new NexusSW::LXD::Transport::Local.new, test_name }
     include_examples 'Transport Functions'
     include_examples 'Container Shutdown'
   end
   context 'Rest Interface' do
     let(:test_name) { rest_name }
-    let(:nx_driver) { rest_driver }
+    let(:test_driver) { rest_driver }
     include_examples 'Container Startup'
-    let(:transport) { rest_transport }
+    let(:test_transport) { rest_transport }
     include_examples 'Transport Functions'
     it 'can set up a nested LXD' do
       # Bootup race condition on my slow laptop - wait for socket to become available
@@ -39,15 +39,15 @@ describe NexusSW::LXD::Driver do
   end
   context 'Nested CLI Interface' do
     let(:test_name) { 'lxd-nested-cli-driver-test' }
-    let(:nx_driver) { NexusSW::LXD::Driver::CLI.new rest_transport }
+    let(:test_driver) { NexusSW::LXD::Driver::CLI.new rest_transport }
     include_examples 'Container Startup'
-    let(:transport) { NexusSW::LXD::Transport::CLI.new rest_transport, test_name }
+    let(:test_transport) { NexusSW::LXD::Transport::CLI.new rest_transport, test_name }
     include_examples 'Transport Functions'
     include_examples 'Container Shutdown'
   end
   context 'Rest Interface - Stage 2' do
     let(:test_name) { rest_name }
-    let(:nx_driver) { rest_driver }
+    let(:test_driver) { rest_driver }
     include_examples 'Container Shutdown'
   end
 end
