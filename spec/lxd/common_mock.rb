@@ -1,13 +1,8 @@
 require 'spec_helper'
-require 'mock_transport'
+require 'support/mock_transport'
 
-describe NexusSW::LXD::Driver do
-  context 'Local CLI Interface' do
-    let(:test_name) { 'lxd-cli-driver-test' }
-    let(:test_driver) { NexusSW::LXD::Driver::CLI.new ::NexusSW::LXD::Transport::Mock.new }
-    include_examples 'Container Startup'
-    let(:test_transport) { NexusSW::LXD::Transport::CLI.new NexusSW::LXD::Transport::Mock.new, test_name }
-    include_examples 'Transport Functions'
-    include_examples 'Container Shutdown'
+describe NexusSW::LXD::Driver::CLI do
+  context NexusSW::LXD::Transport::Mock, test_nested: true do
+    it_behaves_like 'Root Container'
   end
 end

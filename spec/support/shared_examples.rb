@@ -1,7 +1,6 @@
-require 'spec_helper'
 require 'tempfile'
 
-shared_examples 'Container Startup' do
+shared_examples 'Container Startup' do |test_name, test_driver|
   it 'detects a missing container' do
     expect(test_driver.container_exists?('idontexist')).not_to be true
   end
@@ -27,7 +26,7 @@ shared_examples 'Container Startup' do
   end
 end
 
-shared_examples 'Transport Functions' do
+shared_examples 'Transport Functions' do |test_transport|
   it 'can execute a command in the container' do
     expect { test_transport.execute(['ls', '-al', '/']).error! }.not_to raise_error
   end
@@ -57,7 +56,7 @@ shared_examples 'Transport Functions' do
   end
 end
 
-shared_examples 'Container Shutdown' do
+shared_examples 'Container Shutdown' do |test_name, test_driver|
   it 'can stop a container' do
     test_driver.stop_container test_name, timeout: 60, retry_interval: 5
     expect(test_driver.container_status(test_name)).to eq 'stopped'
