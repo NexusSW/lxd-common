@@ -12,3 +12,4 @@
 *console.log
 .kitchen/
 .kitchen.local.yml
+.vscode
