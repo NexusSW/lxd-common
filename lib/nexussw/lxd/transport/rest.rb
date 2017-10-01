@@ -42,7 +42,7 @@ module NexusSW
 
         def read_file(path)
           hk.read_file container_name, path
-        rescue Hyperkit::NotFound
+        rescue ::Hyperkit::NotFound
           return ''
         end
 
