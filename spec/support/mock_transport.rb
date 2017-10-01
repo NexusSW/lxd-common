@@ -7,7 +7,6 @@ module NexusSW
       class Mock < Transport
         def initialize(config = {})
           super 'mock:', config
-          @@files['local:'] ||= {}
           @@files['mock:'] ||= {}
         end
 
@@ -81,35 +80,12 @@ module NexusSW
           File.open local_path, 'w' do |f|
             f.write @@files['mock:'][path]
           end
-          @@files['local:'][local_path] = @@files['mock:'][path]
         end
 
         def upload_file(local_path, path)
-          @@files['local:'][local_path] = File.read(local_path)
-          @@files['mock:'][path] = @@files['local:'][local_path]
+          @@files['mock:'][path] = File.read(local_path)
         end
       end
     end
   end
 end
-
-# "lxc info idontexist"
-# "lxc info iwontexist"
-# "lxc launch ubububuntu-idontexist iwontexist"
-# "lxc info iwontexist"
-# "lxc info lxd-cli-driver-test"
-# "lxc launch ubuntu:lts lxd-cli-driver-test -c security.privileged=true -c security.nesting=true"
-# "lxc info lxd-cli-driver-test"
-# "lxc info lxd-cli-driver-test"
-# "lxc exec lxd-cli-driver-test -- ls -al /"
-# "lxc file push C:/Users/Sean/AppData/Local/Temp/lxd-cli-driver-test20170918-5360-t1f4y3 lxd-cli-driver-test/tmp/rspec.tmp"
-# "rm -rf C:/Users/Sean/AppData/Local/Temp/lxd-cli-driver-test20170918-5360-t1f4y3"
-# "rm -rf C:/Users/Sean/AppData/Local/Temp/lxd-cli-driver-test20170918-5360-1u47b52"
-# "lxc file pull lxd-cli-driver-test/tmp/rspec2.tmp C:/Users/Sean/AppData/Local/Temp/lxd-cli-driver-test20170918-5360-155kbcq"
-# "rm -rf C:/Users/Sean/AppData/Local/Temp/lxd-cli-driver-test20170918-5360-155kbcq"
-# "lxc file pull lxd-cli-driver-test/tmp/rspec.tmp C:/Users/Sean/AppData/Local/Temp/lxd-cli-driver-test20170918-5360-sldras"
-# "rm -rf C:/Users/Sean/AppData/Local/Temp/lxd-cli-driver-test20170918-5360-sldras"
-# "lxc info lxd-cli-driver-test"
-# "lxc info lxd-cli-driver-test"
-# "lxc info lxd-cli-driver-test"
-# "lxc info lxd-cli-driver-test"
