@@ -13,6 +13,7 @@ shared_examples 'it can create containers' do
   it 'creates a container' do
     # Requiring an image with lxd installed already, for 'easliy' testing nested containers
     expect(driver.create_container(name, alias: 'lts', server: 'https://cloud-images.ubuntu.com/releases', protocol: 'simplestreams', config: { 'security.privileged' => true, 'security.nesting' => true })).to eq name
+    sleep 5
   end
 
   it 'detects an existing container' do
