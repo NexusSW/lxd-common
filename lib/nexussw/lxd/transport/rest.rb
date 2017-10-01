@@ -19,23 +19,14 @@ module NexusSW
           if block_given? # Allow for an optimized case that doesn't require the support of 3 new websocket connections
             retval = hk.execute_command(container_name, command, wait_for_websocket: true, interactive: false, sync: false)
             opid = retval[:id]
-            baseurl = rest_endpoint
-            baseurl += '/' unless baseurl.end_with? '/'
-            baseurl += "1.0/operations/#{retval[:id]}/websocket?secret="
-            _stdout = WebSocket::Client::Simple.connect "#{baseurl}#{retval[:metadata][:fds][:'1']}" do |ws|
-              ws.on :message do |msg|
-                close if msg.data.empty?
-                yield(msg.data, nil)
-              end
+            _stdout = ws_connect(opid, retval[:metadata][:fds][:'1']) do |msg|
+              yield(msg.data, nil)
             end
-            _stderr = WebSocket::Client::Simple.connect "#{baseurl}#{retval[:metadata][:fds][:'2']}" do |ws|
-              ws.on :message do |msg|
-                close if msg.data.empty?
-                yield(nil, msg.data)
-              end
+            _stderr = ws_connect(opid, retval[:metadata][:fds][:'2']) do |msg|
+              yield(nil, msg.data)
             end
             # websockets stall until fd 0 (or all?) is connected
-            _stdin = WebSocket::Client::Simple.connect "#{baseurl}#{retval[:metadata][:fds][:'0']}"
+            _stdin = ws_connect(opid, retval[:metadata][:fds][:'0'])
           else
             opid = hk.execute_command(container_name, command, sync: false)[:id]
           end
@@ -65,6 +56,20 @@ module NexusSW
 
         def upload_file(local_path, path)
           hk.push_file local_path, container_name, path
+        end
+
+        protected
+
+        def ws_connect(opid, endpoint)
+          baseurl = rest_endpoint
+          baseurl += '/' unless baseurl.end_with? '/'
+          baseurl += "1.0/operations/#{opid}/websocket?secret="
+          WebSocket::Client::Simple.connect "#{baseurl}#{endpoint}" do |ws|
+            ws.on :message do |msg|
+              close if msg.data.empty?
+              yield(msg.data) if block_given?)
+            end
+          end
         end
       end
     end
