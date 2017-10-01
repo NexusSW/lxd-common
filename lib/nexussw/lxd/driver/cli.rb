@@ -25,6 +25,7 @@ module NexusSW
           configs = container_options[:config] || {}
           configs.each { |k, v| cline += " -c #{k}=#{v}" }
           inner_transport.execute(cline).error!
+          wait_for_status container_id, 'running'
           container_name
         end
 
