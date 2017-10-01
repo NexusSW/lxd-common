@@ -44,7 +44,14 @@ module NexusSW
 
         def start_container(container_id)
           return if container_status(container_id) == 'running'
-          @hk.start_container(container_id)
+          retval = @hk.start_container(container_id, sync: false)
+          LXD.with_timeout_and_retries timeout: 0 do
+            begin
+              @hk.wait_for_operation retval[:id]
+            rescue Faraday::TimeoutError => e
+              raise Timeout::Retry.new e # rubocop:disable Style/RaiseArgs
+            end
+          end
           wait_for_status container_id, 'running'
         end
 
