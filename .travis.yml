@@ -2,8 +2,8 @@ sudo: true
 language: ruby
 rvm:
 #  - 1.9.? # installed on Trusty by default # Unimportant - noted for posterity
+#  - 2.0.0 # this is my preferred minimum ruby - add this in if I switch deps around and lose whomever is locking me to 2.1.0
   - 2.1.0 # minimum version of one of my dependencies - I forget which, but I'm willing to at least consider dodging this one if it becomes constrictive
-#           - I'd rather say 2.0 is reasonable, or to allow for default Trusty Ruby, but Trusty is almost EOL at this time
   - 2.3.1 # 2.3.1p112 version installed on Xenial from standard repos at this time ***** do NOT mark 'allow fail' until Xenial is no longer LTS
   - 2.4.2 # 2.4.2p198 Installed embedded in current Chef DK 2.3.4 # This one will be important for consumers
   - ruby-head
@@ -13,10 +13,10 @@ matrix:
   allow_failures:
     - rvm: ruby-head
 before_install:
+  - gem update --system
   - curl -L https://www.chef.io/chef/install.sh | sudo bash
   - sudo chef-apply spec/provision_recipe.rb
-  - ip a
-  - ip r
+  - ip a && ip r # log this info - the recipe messes with local networking so let's be able to determine if there is an IP range conflict
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
@@ -26,6 +26,6 @@ script:
   - rake mock
   - sudo su -l $USER -c "cd $(pwd) ; rvm use ${RUBY_VERSION/ruby-/} ; rake spec"
 after_script:
-  - cat Gemfile.lock
+  - cat Gemfile.lock # for posterity
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
 #  - if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
