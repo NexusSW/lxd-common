@@ -1,6 +1,6 @@
 require 'tempfile'
 
-shared_examples 'Container Startup' do
+shared_examples 'it can create containers' do
   it 'detects a missing container' do
     expect(driver.container_exists?('idontexist')).not_to be true
   end
@@ -21,7 +21,7 @@ shared_examples 'Container Startup' do
 end
 
 shared_examples 'Transport Functions' do
-  it 'can execute a command in the container' do
+  it 'can execute a command in a container' do
     expect { transport.execute(['ls', '-al', '/']).error! }.not_to raise_error
   end
 
@@ -50,7 +50,7 @@ shared_examples 'Transport Functions' do
   end
 end
 
-shared_examples 'Container Shutdown' do
+shared_examples 'it can teardown a container' do
   it 'can stop a container' do
     driver.stop_container name, timeout: 60, retry_interval: 5
     expect(driver.container_status(name)).to eq 'stopped'
