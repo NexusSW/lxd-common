@@ -1,9 +1,11 @@
 require 'support/mock_transport'
 
-class Hyperkit::Mock
-  def initialize
-    @mock = NexusSW::LXD::Transport::Mock.new
-  end
+module NexusSW::Hyperkit
+  class Mock
+    def initialize
+      @mock = NexusSW::LXD::Transport::Mock.new
+    end
 
-  attr_reader :mock
+    attr_reader :mock
+  end
 end

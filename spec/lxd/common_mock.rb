@@ -30,7 +30,7 @@ describe 'Rest Driver' do
   end
   subject(:driver) { base_driver }
   def base_driver
-    NexusSW::LXD::Driver::Rest.new 'https://localhost:8443', { verify_ssl: false }, Hyperkit::Mock.new
+    NexusSW::LXD::Driver::Rest.new 'https://localhost:8443', { verify_ssl: false }, NexusSW::Hyperkit::Mock.new
   end
   subject(:transport) { base_transport }
   def base_transport
