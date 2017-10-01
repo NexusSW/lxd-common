@@ -67,7 +67,7 @@ module NexusSW
           WebSocket::Client::Simple.connect "#{baseurl}#{endpoint}" do |ws|
             ws.on :message do |msg|
               close if msg.data.empty?
-              yield(msg.data) if block_given?
+              yield(msg) if block_given?
             end
           end
         end
