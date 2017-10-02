@@ -35,8 +35,9 @@ module NexusSW::Hyperkit
         end
         attr_reader :data
       end
-      def ws_connect(_opid, endpoint)
-        yield WSRetval.new(endpoint) if block_given? && endpoint
+      def ws_connect(_opid, endpoints)
+        yield(endpoints[:'1'], endpoints[:'2']) if block_given?
+        # yield WSRetval.new(endpoint) if block_given? && endpoint
       end
     end
 
