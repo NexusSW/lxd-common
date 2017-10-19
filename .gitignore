@@ -10,4 +10,6 @@
 .directory
 .vagrant
 *console.log
-/.kitchen/
+.kitchen/
+.kitchen.local.yml
+.vscode

@@ -11,6 +11,7 @@ module NexusSW
         # REQUEST_TIMEOUT = 120 # upstream default: 120
         def initialize(rest_endpoint, driver_options = {}, inner_driver = nil)
           @rest_endpoint = rest_endpoint
+          @driver_options = driver_options
           hkoptions = (driver_options || {}).merge(
             api_endpoint: rest_endpoint,
             auto_sync: true
@@ -21,7 +22,7 @@ module NexusSW
           # unneeded while default valued: @hk.agent.instance_variable_get(:@conn).options[:timeout] = REQUEST_TIMEOUT
         end
 
-        attr_reader :hk, :rest_endpoint
+        attr_reader :hk, :rest_endpoint, :driver_options
 
         def create_container(container_name, container_options = {})
           if container_exists?(container_name)
@@ -30,13 +31,8 @@ module NexusSW
           end
           # we'll break this apart and time it out for those with slow net (and this was my 3 minute stress test case with good net)
           # parity note: CLI will run indefinitely rather than timeout hence the 0 timeout
-          retval = @hk.create_container(container_name, container_options.merge(sync: false))
-          LXD.with_timeout_and_retries timeout: 0 do # we'll rely on the Faraday Timeout for the retry logic so that they're not battling # , retry_interval: REQUEST_TIMEOUT do
-            begin
-              @hk.wait_for_operation retval[:id]
-            rescue Faraday::TimeoutError => e
-              raise Timeout::Retry.new e # rubocop:disable Style/RaiseArgs
-            end
+          retry_forever do
+            @hk.create_container(container_name, container_options.merge(sync: false))
           end
           start_container container_name
           container_name
@@ -44,7 +40,9 @@ module NexusSW
 
         def start_container(container_id)
           return if container_status(container_id) == 'running'
-          @hk.start_container(container_id)
+          retry_forever do
+            @hk.start_container(container_id, sync: false)
+          end
           wait_for_status container_id, 'running'
         end
 
@@ -94,6 +92,19 @@ module NexusSW
 
         def container(container_id)
           @hk.container container_id
+        end
+
+        private
+
+        def retry_forever
+          retval = yield
+          LXD.with_timeout_and_retries timeout: 0 do
+            begin
+              @hk.wait_for_operation retval[:id]
+            rescue Faraday::TimeoutError => e
+              raise Timeout::Retry.new e # rubocop:disable Style/RaiseArgs
+            end
+          end
         end
       end
     end

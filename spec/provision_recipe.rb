@@ -1,3 +1,4 @@
+
 node.override['username'] = if node['etc']['passwd']['travis']
                               'travis'
                             elsif node['etc']['passwd']['vagrant']
@@ -36,16 +37,16 @@ LXD_IPV6_PROXY="true"
   notifies :restart, 'service[lxd]', :immediately
 end
 
-execute 'lxd init --auto --network-address [::] --network-port 8443'
+execute 'lxd init --auto --network-address [::] --network-port 8443' # this should probably be guarded somehow...  `lxc info` parse for network address most likely
 execute 'create-bridge' do
   command 'lxc network create lxdbr0'
   not_if { File.exist? '/etc/default/lxd-bridge' }
-  not_if 'grep "lxdbr0" <(ip l)'
+  not_if 'ip l show lxdbr0'
 end
 execute 'use-bridge' do
   command 'lxc network attach-profile lxdbr0 default'
   action :nothing
-  subscribes :run, 'execute[create-bridge]', :immediately
+  subscribes :run, 'execute[create-bridge]', :immediately # needs a more proper guard lest we rely on this not erroring when the create-bridge succeeds
 end
 
 directory "/home/#{node['username']}/.config" do
@@ -69,7 +70,7 @@ execute 'addcert' do
   action :nothing
   subscribes :run, 'execute[client.crt]', :immediately
 end
-execute "chown -R #{node['username']}:#{node['username']} /home/#{node['username']}/.config/lxc"
+execute "chown -R #{node['username']}:#{node['username']} /home/#{node['username']}/.config/lxc" # guard
 
 unless node['username'] == 'travis'
   apt_repository 'ruby-ng' do
@@ -78,8 +79,8 @@ unless node['username'] == 'travis'
     only_if { node['lsb']['codename'] == 'trusty' }
     notifies :update, 'apt_update[update]', :immediately
   end
-  package %w(ruby ruby-dev git make gcc)
-  package %w(ruby2.1 ruby2.1-dev) do
+  package %w(ruby ruby-dev git make gcc) # ruby & ruby-dev are redundant for trusty
+  package %w(ruby2.1 ruby2.1-dev) do # raise/lower this if our minimum version ever changes - only affects local testing
     only_if { node['lsb']['codename'] == 'trusty' }
   end
   gem_package 'bundler'
