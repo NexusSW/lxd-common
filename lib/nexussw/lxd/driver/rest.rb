@@ -11,6 +11,7 @@ module NexusSW
         # REQUEST_TIMEOUT = 120 # upstream default: 120
         def initialize(rest_endpoint, driver_options = {}, inner_driver = nil)
           @rest_endpoint = rest_endpoint
+          @driver_options = driver_options
           hkoptions = (driver_options || {}).merge(
             api_endpoint: rest_endpoint,
             auto_sync: true
@@ -21,7 +22,7 @@ module NexusSW
           # unneeded while default valued: @hk.agent.instance_variable_get(:@conn).options[:timeout] = REQUEST_TIMEOUT
         end
 
-        attr_reader :hk, :rest_endpoint
+        attr_reader :hk, :rest_endpoint, :driver_options
 
         def create_container(container_name, container_options = {})
           if container_exists?(container_name)

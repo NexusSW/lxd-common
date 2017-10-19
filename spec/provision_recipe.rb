@@ -79,7 +79,7 @@ unless node['username'] == 'travis'
     only_if { node['lsb']['codename'] == 'trusty' }
     notifies :update, 'apt_update[update]', :immediately
   end
-  package %w(ruby ruby-dev git make gcc g++)
+  package %w(ruby ruby-dev git make gcc) # ruby & ruby-dev are redundant for trusty
   package %w(ruby2.1 ruby2.1-dev) do # raise/lower this if our minimum version ever changes - only affects local testing
     only_if { node['lsb']['codename'] == 'trusty' }
   end
