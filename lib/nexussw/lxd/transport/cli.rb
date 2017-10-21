@@ -26,67 +26,39 @@ module NexusSW
         end
 
         def read_file(path)
-          tfile = Tempfile.new(container_name)
-          tfile.close
-          retval = execute("#{@container_name}#{path} #{tfile.path}", subcommand: 'file pull', capture: false)
+          tfile = inner_mktmp
+          retval = execute("#{@container_name}#{path} #{tfile}", subcommand: 'file pull', capture: false)
           return '' if retval.exitstatus == 1
           retval.error!
-          return inner_transport.read_file tfile.path
+          return inner_transport.read_file tfile
         ensure
-          if tfile
-            begin
-              inner_transport.execute "rm -rf #{tfile.path}"
-            ensure
-              tfile.unlink
-            end
-          end
+          inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
         end
 
         def write_file(path, content)
-          tfile = Tempfile.new(container_name)
-          tfile.close
-          inner_transport.write_file tfile.path, content
-          execute("#{tfile.path} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
+          tfile = inner_mktmp
+          inner_transport.write_file tfile, content
+          execute("#{tfile} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
         ensure
-          if tfile
-            begin
-              inner_transport.execute "rm -rf #{tfile.path}"
-            ensure
-              tfile.unlink
-            end
-          end
+          inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
         end
 
         def download_file(path, local_path)
-          tfile = Tempfile.new(container_name) if punt
-          tfile.close if tfile
-          localname = tfile ? tfile.path : local_path
+          tfile = inner_mktmp if punt
+          localname = tfile ? tfile : local_path
           execute("#{container_name}#{path} #{localname}", subcommand: 'file pull', capture: false).error!
-          inner_transport.download_file tfile.path, local_path if tfile
+          inner_transport.download_file tfile, local_path if tfile
         ensure
-          if tfile
-            begin
-              inner_transport.execute "rm -rf #{tfile.path}"
-            ensure
-              tfile.unlink
-            end
-          end
+          inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
         end
 
         def upload_file(local_path, path)
-          tfile = Tempfile.new(container_name) if punt
-          tfile.close if tfile
-          localname = tfile ? tfile.path : local_path
-          inner_transport.upload_file local_path, tfile.path if tfile
+          tfile = inner_mktmp if punt
+          localname = tfile ? tfile : local_path
+          inner_transport.upload_file local_path, tfile if tfile
           execute("#{localname} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
         ensure
-          if tfile
-            begin
-              inner_transport.execute "rm -rf #{tfile.path}"
-            ensure
-              tfile.unlink
-            end
-          end
+          inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
         end
 
         def add_remote(host_name)
@@ -107,6 +79,15 @@ module NexusSW
             return true if line.start_with? "| #{host_name} "
           end
           false
+        end
+
+        private
+
+        def inner_mktmp
+          tfile = Tempfile.new(container_name)
+          "/tmp/#{File.basename tfile.path}"
+        ensure
+          tfile.unlink
         end
       end
     end
