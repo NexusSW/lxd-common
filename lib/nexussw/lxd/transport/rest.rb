@@ -84,9 +84,15 @@ module NexusSW
           baseurl += "1.0/operations/#{opid}/websocket?secret="
 
           pipes = {}
+          closed = false
           NIO::WebSocket.connect(baseurl + endpoints[:control], ws_options) do |driver|
-            driver.on :io_error do
-              pipes.each { |_, v| v.close if v.respond_to? :close }
+            driver.on :io_error do # usually I get an EOF
+              pipes.each { |_, v| v.close if v.respond_to? :close } unless closed
+              closed = true
+            end
+            driver.on :close do # but on occasion I get a legit close
+              pipes.each { |_, v| v.close if v.respond_to? :close } unless closed
+              closed = true
             end
           end
           pipes[:'1'] = NIO::WebSocket.connect(baseurl + endpoints[:'1'], ws_options) do |driver|
