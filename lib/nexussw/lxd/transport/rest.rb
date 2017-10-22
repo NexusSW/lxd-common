@@ -57,17 +57,20 @@ module NexusSW
         protected
 
         class WSWrapper
-          def initialize(stdout, stderr, stdin)
-            @stdout = stdout
-            @stderr = stderr
-            @stdin = stdin
+          def initialize(waitlist)
+            @waitlist = waitlist.compact
           end
-          attr_reader :stdout, :stderr, :stdin
+          attr_reader :waitlist
 
           def exit
-            stdout.close
-            stderr.close
-            stdin.close
+            loop do
+              allclosed = true
+              waitlist.each do |driver|
+                allclosed = false unless driver.state == :closed
+              end
+              break if allclosed
+              Thread.pass
+            end
           end
         end
 
@@ -80,20 +83,28 @@ module NexusSW
           baseurl += '/' unless baseurl.end_with? '/'
           baseurl += "1.0/operations/#{opid}/websocket?secret="
 
-          stdout = NIO::WebSocket.connect(baseurl + endpoints[:'1'], ws_options) do |driver|
+          pipes = {}
+          NIO::WebSocket.connect(baseurl + endpoints[:control], ws_options) do |driver|
+            driver.on :io_error do
+              pipes.each { |_, v| v.close if v.respond_to? :close }
+            end
+          end
+          pipes[:'1'] = NIO::WebSocket.connect(baseurl + endpoints[:'1'], ws_options) do |driver|
             driver.on :message do |ev|
               data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
               yield data
             end
           end
-          stderr = NIO::WebSocket.connect(baseurl + endpoints[:'2'], ws_options) do |driver|
-            driver.on :message do |ev|
-              data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
-              yield nil, data
+          endpoints.each do |fd, secret|
+            next if [:control, :'1'].include? fd
+            pipes[fd] = NIO::WebSocket.connect(baseurl + secret, ws_options) do |driver|
+              driver.on :message do |ev|
+                data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
+                yield nil, data
+              end
             end
           end
-          stdin = NIO::WebSocket.connect(baseurl + endpoints[:'0'], ws_options)
-          WSWrapper.new stdout, stderr, stdin
+          WSWrapper.new [pipes[:'1'], pipes[:'2']]
         end
       end
     end
