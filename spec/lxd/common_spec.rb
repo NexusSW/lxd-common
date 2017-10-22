@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'support/mock_transport'
 
 # NIO::WebSocket.log_traffic = true
-NIO::WebSocke.logger.level = Logger::DEBUG
+NIO::WebSocket.logger.level = Logger::DEBUG
 describe 'Rest Driver' do
   subject(:name) { base_name }
   def base_name
