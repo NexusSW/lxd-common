@@ -1,5 +1,6 @@
 require 'nexussw/lxd/transport'
 require 'open3'
+require 'nio/websocket'
 
 module NexusSW
   module LXD
@@ -10,23 +11,30 @@ module NexusSW
         end
 
         def execute_chunked(command, options)
+          NIO::WebSocket::Reactor.start
           LXD.with_timeout_and_retries options do
+            # Let's borrow the NIO::WebSocket reactor
             Open3.popen3(command) do |_stdin, stdout, stderr, th|
-              streams = [stdout, stderr]
+              mon_out = mon_err = nil
+              NIO::WebSocket::Reactor.queue_task do
+                mon_out = NIO::WebSocket::Reactor.selector.register(stdout, :r)
+                mon_out.value = proc do
+                  data = read(mon_out) # read regardless of block_given? so that we don't spin out on :r availability
+                  yield(data) if data && block_given?
+                end
+              end
+              NIO::WebSocket::Reactor.queue_task do
+                mon_err = NIO::WebSocket::Reactor.selector.register(stderr, :r)
+                mon_err.value = proc do
+                  data = read(mon_err) # read regardless of block_given? so that we don't spin out on :r availability
+                  yield(nil, data) if data && block_given?
+                end
+              end
+
               loop do
-                stdout_chunk = stderr_chunk = nil
-                begin
-                  stdout_chunk = stdout.read_nonblock(1024) unless stdout.eof?
-                rescue IO::WaitReadable
-                  IO.select streams, nil, streams, 1
-                end
-                begin
-                  stderr_chunk = stderr.read_nonblock(1024) unless stderr.eof?
-                rescue IO::WaitReadable
-                  IO.select(streams, nil, streams, 1) unless stdout_chunk
-                end
-                yield(stdout_chunk, stderr_chunk) if block_given?
-                return LXDExecuteResult.new(command, options, th.value.exitstatus) if th.value.exited? && stdout.eof? && stderr.eof?
+                return LXDExecuteResult.new(command, options, th.value.exitstatus) if th.value.exited? && mon_out && mon_err && mon_out.closed? && mon_err.closed?
+                Thread.pass
+                sleep 0.01
               end
             end
           end
@@ -41,6 +49,17 @@ module NexusSW
           File.open path, 'w' do |f|
             f.write content
           end
+        end
+
+        private
+
+        def read(monitor)
+          monitor.io.read_nonblock(16384)
+        rescue IO::WaitReadable # rubocop:disable Lint/ShadowedException
+          return nil
+        rescue Errno::ECONNRESET, EOFError, IOError
+          monitor.close
+          return nil
         end
       end
     end
