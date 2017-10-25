@@ -70,6 +70,7 @@ module NexusSW
               end
               break if allclosed
               Thread.pass
+              sleep 0.1
             end
           end
         end

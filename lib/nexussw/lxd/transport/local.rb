@@ -30,11 +30,10 @@ module NexusSW
                   yield(nil, data) if data && block_given?
                 end
               end
-
+              th.join
               loop do
                 return LXDExecuteResult.new(command, options, th.value.exitstatus) if th.value.exited? && mon_out && mon_err && mon_out.closed? && mon_err.closed?
                 Thread.pass
-                sleep 0.01
               end
             end
           end
