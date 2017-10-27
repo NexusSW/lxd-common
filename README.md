@@ -1,12 +1,7 @@
 # LXD::Common [![Build Status](https://travis-ci.org/NexusSW/lxd-common.svg?branch=master)](https://travis-ci.org/NexusSW/lxd-common) [![Dependency Status](https://gemnasium.com/badges/github.com/NexusSW/lxd-common.svg)](https://gemnasium.com/github.com/NexusSW/lxd-common)
 
-[![Code Climate](https://codeclimate.com/github/NexusSW/lxd-common/badges/gpa.svg)](https://codeclimate.com/github/NexusSW/lxd-common)
-[![Test Coverage](https://codeclimate.com/github/NexusSW/lxd-common/badges/coverage.svg)](https://codeclimate.com/github/NexusSW/lxd-common/coverage)
-[![Issue Count](https://codeclimate.com/github/NexusSW/lxd-common/badges/issue_count.svg)](https://codeclimate.com/github/NexusSW/lxd-common)
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/lxd/common`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+[![Maintainability](https://api.codeclimate.com/v1/badges/28fae322a45ffa75b771/maintainability)](https://codeclimate.com/github/NexusSW/lxd-common/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/28fae322a45ffa75b771/test_coverage)](https://codeclimate.com/github/NexusSW/lxd-common/test_coverage)
 
 ## Installation
 
@@ -18,23 +13,22 @@ gem 'lxd-common'
 
 And then execute:
 
-    $ bundle
+    > bundle
 
 Or install it yourself as:
 
-    $ gem install lxd-common
+    > gem install lxd-common
 
 ## Usage
 
-TODO: Write usage instructions here
+TODO:
 
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+To install this gem onto your local machine, run `bundle exec rake install`.
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/NexusSW/lxd-common.
-
+Bug reports and pull requests are welcome on GitHub at <https://github.com/NexusSW/lxd-common>.
