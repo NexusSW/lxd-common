@@ -49,11 +49,8 @@ execute 'use-bridge' do
   subscribes :run, 'execute[create-bridge]', :immediately # needs a more proper guard lest we rely on this not erroring when the create-bridge succeeds
 end
 
-directory "/home/#{node['username']}/.config" do
-  owner node['username']
-  group node['username']
-end
 directory "/home/#{node['username']}/.config/lxc" do
+  recursive true
   owner node['username']
   group node['username']
 end
