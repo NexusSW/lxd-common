@@ -1,31 +1,28 @@
-sudo: true
+sudo: false
 language: ruby
 rvm:
-#  - 1.9.? # installed on Trusty by default # Unimportant - noted for posterity
-#  - 2.0.0 # this is my preferred minimum ruby - add this in if I switch deps around and lose whomever is locking me to 2.1.0
-  - 2.1.0 # minimum version of one of my dependencies - I forget which, but I'm willing to at least consider dodging this one if it becomes constrictive
-  - 2.3.1 # 2.3.1p112 version installed on Xenial from standard repos at this time ***** do NOT mark 'allow fail' until Xenial is no longer LTS
-  - 2.4.2 # 2.4.2p198 Installed embedded in current Chef DK 2.3.4 # This one will be important for consumers
-  - ruby-head
-# We'll add more as particular bugs surface
-# RUBY_VERSION=ruby-2.1.0
+- 2.1.0
+- 2.3.1
+- 2.4.2
+- ruby-head
 matrix:
   allow_failures:
-    - rvm: ruby-head
+  - rvm: ruby-head
 before_install:
-  - gem update --system
-  - curl -L https://www.chef.io/chef/install.sh | sudo bash
-  - sudo chef-apply spec/provision_recipe.rb
-  - ip a && ip r # log this info - the recipe messes with local networking so let's be able to determine if there is an IP range conflict
+- gem update --system
+- curl -L https://www.chef.io/chef/install.sh | sudo bash
+- sudo chef-apply spec/provision_recipe.rb
+- ip a && ip r
 before_script:
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-  - chmod +x ./cc-test-reporter
-  - ./cc-test-reporter before-build
+- curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+- chmod +x ./cc-test-reporter
+- "./cc-test-reporter before-build"
 script:
-#  - set # woah! ok I won't do that again unless needed
-  - rake mock
-  - sudo su -l $USER -c "cd $(pwd) ; rvm use ${RUBY_VERSION/ruby-/} ; rake spec"
+- rake mock
+- sudo su -l $USER -c "cd $(pwd) && rvm use ${RUBY_VERSION/ruby-/} && rake spec"
 after_script:
-  - cat Gemfile.lock # for posterity
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
-#  - if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
+- cat Gemfile.lock
+- "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
+notifications:
+  slack:
+    secure: cMKi0hpXPZt8loD84alldIn3FCB0XBwHyOmh94MYnJ2GwtqGmrdDod5WLa36123z6XaDqpX0d/kXUZGWoVPTRK5QKWzlp/2bR6ZNGcWGFtB37UCjDweF9NRKgi56Nn2z3ws7qz/tG0MtH2991KjBh+Q5StaKHSTSh5BTHkLXFJ+YSW4ucY0PUctenF0sAz6vrLVNiYyrfWlGG6JBAd5LjinB6NdZHIDAl3yZ+IGrfxLXKAbLDgWcEVbXGOpQ0XSe7jiAzg7gi1ofOYuOR7JJzemQ8BzT6X42KPAAJxySz04UrTtxWkIPfX1OMwjlJB3RL932H+Ovv5KtU96VG8Z9npPK8li5uWYFLTwesH86sT1Kuah5Ct46D9d1LpZUzFt+sntGAQ5RY90QDItbr2OvkvPQ2kKjQpAsPb80x60yyhzWsJ3kZVejIuxv6pM7KF0hF1IHjj8YGRFtZxZx8NyYCoZaSUZQ+vl4djyHpvnKViNcXckgsMlJtQKfeluY1lOjGvciLctP/6rVKbOjGeENZc8TcwpnCZtmmBgrzW8wnY2/7f8q/kMILNqfu5YXTFQRYoJ3Nn7NP8oWlZ/hJN+Zt0ywIcxTswwzNfEM2/H8A4dSp8YZlI0kf09nAsLAgPQmaRcZjl8INzmlHEfy8vD+ooNDoPt7m7DlPpcNPKWzwjQ=
