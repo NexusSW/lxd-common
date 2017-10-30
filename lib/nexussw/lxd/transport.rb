@@ -28,7 +28,7 @@ module NexusSW
         end
 
         def error!
-          return self if exitstatus == 0
+          return if exitstatus == 0
           msg = "Error: '#{command}' failed with exit code #{exitstatus}.\n"
           msg += "STDOUT: #{stdout}" if stdout && !stdout.empty?
           msg += "STDERR: #{stderr}" if stderr && !stderr.empty?
@@ -44,14 +44,12 @@ module NexusSW
         capture_options[:capture] = block if block_given?
         capture_options[:capture] ||= options[:capture] if options[:capture].respond_to? :call
         # capture_options[:capture] ||= options[:stream] if options[:stream].respond_to? :call
-        capture_options[:capture] ||= lambda do |stdout_chunk, stderr_chunk|
+        capture_options[:capture] ||= proc do |stdout_chunk, stderr_chunk|
           capture_options[:stdout] += stdout_chunk if stdout_chunk
           capture_options[:stderr] += stderr_chunk if stderr_chunk
         end
 
-        execute_chunked(command, options.merge(capture_options: capture_options)) do |stdout_chunk, stderr_chunk|
-          capture_options[:capture].call stdout_chunk, stderr_chunk
-        end
+        execute_chunked(command, options.merge(capture_options: capture_options), &capture_options[:capture])
       end
 
       def read_file(_path)

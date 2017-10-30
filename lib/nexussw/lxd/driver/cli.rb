@@ -6,7 +6,7 @@ require 'json'
 module NexusSW
   module LXD
     class Driver
-      class CLI < Driver
+      module CLI
         def initialize(inner_transport, driver_options = {})
           @inner_transport = inner_transport
           @driver_options = driver_options || {}
@@ -71,35 +71,6 @@ module NexusSW
           info['Status'].downcase
         end
 
-        def ensure_profiles(profiles = {})
-          profile_list = begin
-                            res = inner_transport.execute 'lxc profile list'
-                            res.error!
-                            res.stdout
-                          end
-          profiles.each do |name, profile|
-            found = false
-            profile_list.each_line do |line|
-              found = line.start_with? "| #{name} "
-              break if found
-            end
-            next if found
-            inner_transport.execute("lxc profile create #{name}").error!
-            tfile = Tempfile.new name
-            tfile.close
-            begin
-              inner_transport.write_file tfile.path, profile.to_hash.to_yaml
-              begin
-                inner_transport.execute("bash -c 'cat #{tfile.path} | lxc profile edit #{name}'").error!
-              ensure
-                inner_transport.execute("rm -rf #{tfile.path}", capture: false).error!
-              end
-            ensure
-              tfile.unlink
-            end
-          end
-        end
-
         def convert_keys(oldhash, level = 1)
           return {} unless oldhash
           retval = {}
@@ -144,6 +115,22 @@ module NexusSW
           retval[:devices] = convert_keys(retval[:devices], 2)
           retval[:expanded_devices] = convert_keys(retval[:expanded_devices], 2)
           retval
+        end
+
+        def container_exists?(container_id)
+          return true if container_status(container_id)
+          return false
+        rescue
+          false
+        end
+
+        protected
+
+        def wait_for_status(container_id, newstatus)
+          loop do
+            return if container_status(container_id) == newstatus
+            sleep 0.5
+          end
         end
 
         private

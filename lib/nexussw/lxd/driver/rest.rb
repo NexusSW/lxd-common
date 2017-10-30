@@ -4,7 +4,7 @@ require 'hyperkit'
 module NexusSW
   module LXD
     class Driver
-      class Rest < Driver
+      module Rest
         # PARITY note: CLI functions are on an indefinite timeout by default, yet we have a 2 minute socket read timeout
         # Leaving it alone, for now, on calls that are quick in nature
         # Adapting on known long running calls such as create, stop, execute
@@ -82,16 +82,24 @@ module NexusSW
           STATUS_CODES[@hk.container_state(container_id)['status_code'].to_i]
         end
 
-        def ensure_profiles(profiles = {})
-          return unless profiles
-          profile_list = @hk.profiles
-          profiles.each do |name, profile|
-            @hk.create_profile name, profile unless profile_list.index name
-          end
-        end
-
         def container(container_id)
           @hk.container container_id
+        end
+
+        def container_exists?(container_id)
+          return true if container_status(container_id)
+          return false
+        rescue
+          false
+        end
+
+        protected
+
+        def wait_for_status(container_id, newstatus)
+          loop do
+            return if container_status(container_id) == newstatus
+            sleep 0.5
+          end
         end
 
         private

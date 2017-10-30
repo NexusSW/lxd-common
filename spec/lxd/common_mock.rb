@@ -14,7 +14,7 @@ context 'While wrapping a Mock Transport' do
     end
     subject(:driver) { base_driver }
     def base_driver
-      NexusSW::LXD::Driver::CLI.new root_transport
+      ::Driver::CLI.new root_transport
     end
     subject(:transport) { base_transport }
     def base_transport
@@ -30,7 +30,7 @@ describe 'Rest Driver' do
   end
   subject(:driver) { base_driver }
   def base_driver
-    NexusSW::LXD::Driver::Rest.new 'https://localhost:8443', { verify_ssl: false }, NexusSW::Hyperkit::Mock.new
+    ::Driver::Rest.new 'https://localhost:8443', { verify_ssl: false }, NexusSW::Hyperkit::Mock.new
   end
   subject(:transport) { base_transport }
   def base_transport

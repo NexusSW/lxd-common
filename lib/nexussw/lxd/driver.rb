@@ -41,28 +41,8 @@ module NexusSW
         raise 'NexusSW::LXD::Driver.container_status not implemented'
       end
 
-      def ensure_profiles(_profiles)
-        raise 'NexusSW::LXD::Driver.ensure_profiles not implemented'
-      end
-
       def container(_container_id)
         raise 'NexusSW::LXD::Driver.container not implemented'
-      end
-
-      def container_exists?(container_id)
-        return true if container_status(container_id)
-        return false
-      rescue
-        false
-      end
-
-      protected
-
-      def wait_for_status(container_id, newstatus)
-        loop do
-          return if container_status(container_id) == newstatus
-          sleep 0.5
-        end
       end
     end
   end
