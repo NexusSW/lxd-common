@@ -28,7 +28,7 @@ module NexusSW::Hyperkit
       handle_async options
     end
 
-    class ::NexusSW::LXD::Transport::Rest
+    module ::NexusSW::LXD::Transport::Rest
       class WSRetval
         def initialize(data)
           @data = data

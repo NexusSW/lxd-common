@@ -3,12 +3,14 @@ require 'yaml'
 
 module NexusSW
   module LXD
-    class Transport
-      class Mock < Transport
+    module Transport
+      class Mock
         def initialize(config = {})
-          super 'mock:', config
+          @config = config
           @@files['mock:'] ||= {}
         end
+
+        attr_reader :config
 
         @@containers = {} # rubocop:disable Style/ClassVars
         @@files = {} # rubocop:disable Style/ClassVars
@@ -16,6 +18,8 @@ module NexusSW
           @@containers.each { |k, _| return [k, filename.sub(k, '')] if filename.start_with? k }
           [nil, filename]
         end
+
+        include ExecuteMixin
 
         def execute_chunked(command, options, &block)
           exitstatus = 0

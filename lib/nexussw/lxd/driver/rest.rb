@@ -3,7 +3,7 @@ require 'hyperkit'
 
 module NexusSW
   module LXD
-    class Driver
+    module Driver
       module Rest
         # PARITY note: CLI functions are on an indefinite timeout by default, yet we have a 2 minute socket read timeout
         # Leaving it alone, for now, on calls that are quick in nature

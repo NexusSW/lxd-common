@@ -4,11 +4,15 @@ require 'nio/websocket'
 
 module NexusSW
   module LXD
-    class Transport
-      class Local < Transport
+    module Transport
+      module Local
         def initialize(config = {})
-          super 'local:', config
+          @config = config
         end
+
+        attr_reader :config
+
+        include ExecuteMixin
 
         def execute_chunked(command, options)
           NIO::WebSocket::Reactor.start

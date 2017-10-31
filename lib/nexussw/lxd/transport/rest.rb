@@ -3,17 +3,20 @@ require 'nio/websocket'
 
 module NexusSW
   module LXD
-    class Transport
-      class Rest < Transport
+    module Transport
+      module Rest
         def initialize(driver, container_name, config = {})
-          super container_name, config
+          @container_name = container_name
+          @config = config
           raise "The rest transport requires the Rest Driver.  You supplied #{driver}" unless driver.respond_to?(:hk) && driver.respond_to?(:rest_endpoint) # driver.is_a? NexusSW::LXD::Driver::Rest
           @rest_endpoint = driver.rest_endpoint
           @driver_options = driver.driver_options
           @hk = driver.hk
         end
 
-        attr_reader :hk, :rest_endpoint
+        attr_reader :hk, :rest_endpoint, :container_name, :config
+
+        include ExecuteMixin
 
         def execute_chunked(command, options = {}, &block)
           opid = nil

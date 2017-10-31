@@ -2,7 +2,7 @@ require 'nexussw/lxd'
 
 module NexusSW
   module LXD
-    class Driver
+    module Driver
       STATUS_CODES = {
         100	=> 'created',
         101	=> 'started',
@@ -21,29 +21,12 @@ module NexusSW
         401	=> 'cancelled',
       }.freeze
 
-      def create_container(_container_name, _container_options)
-        raise 'NexusSW::LXD::Driver.create_container not implemented'
-      end
-
-      def start_container(_container_id)
-        raise 'NexusSW::LXD::Driver.start_container not implemented'
-      end
-
-      def stop_container(_container_id, _options = {})
-        raise 'NexusSW::LXD::Driver.stop_container not implemented'
-      end
-
-      def delete_container(_container_id)
-        raise 'NexusSW::LXD::Driver.delete_container not implemented'
-      end
-
-      def container_status(_container_id)
-        raise 'NexusSW::LXD::Driver.container_status not implemented'
-      end
-
-      def container(_container_id)
-        raise 'NexusSW::LXD::Driver.container not implemented'
-      end
+      # def create_container(_container_name, _container_options)
+      # def start_container(_container_id)
+      # def stop_container(_container_id, _options = {})
+      # def delete_container(_container_id)
+      # def container_status(_container_id)
+      # def container(_container_id)
     end
   end
 end

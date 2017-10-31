@@ -21,3 +21,16 @@ module Driver
     include ::NexusSW::LXD::Driver::Rest
   end
 end
+
+module Transport
+  class CLI
+    include ::NexusSW::LXD::Transport::CLI
+  end
+
+  class Rest
+    include ::NexusSW::LXD::Transport::Rest
+  end
+  class Local
+    include ::NexusSW::LXD::Transport::Local
+  end
+end

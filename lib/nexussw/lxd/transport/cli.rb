@@ -5,14 +5,15 @@ require 'pp'
 
 module NexusSW
   module LXD
-    class Transport
-      class CLI < Transport
+    module Transport
+      module CLI
         def initialize(remote_transport, container_name, config = {})
-          super(container_name, config)
+          @container_name = container_name
+          @config = config
           @inner_transport = remote_transport
           @punt = !inner_transport.is_a?(::NexusSW::LXD::Transport::Local)
         end
-        attr_reader :inner_transport, :punt
+        attr_reader :inner_transport, :punt, :container_name, :config
 
         def execute(command, options = {})
           mycommand = command.is_a?(Array) ? command.join(' ') : command
@@ -45,7 +46,7 @@ module NexusSW
 
         def download_file(path, local_path)
           tfile = inner_mktmp if punt
-          localname = tfile ? tfile : local_path
+          localname = tfile || local_path
           execute("#{container_name}#{path} #{localname}", subcommand: 'file pull', capture: false).error!
           inner_transport.download_file tfile, local_path if tfile
         ensure
@@ -54,7 +55,7 @@ module NexusSW
 
         def upload_file(local_path, path)
           tfile = inner_mktmp if punt
-          localname = tfile ? tfile : local_path
+          localname = tfile || local_path
           inner_transport.upload_file local_path, tfile if tfile
           execute("#{localname} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
         ensure
@@ -83,6 +84,7 @@ module NexusSW
 
         private
 
+        # kludge for windows environment
         def inner_mktmp
           tfile = Tempfile.new(container_name)
           "/tmp/#{File.basename tfile.path}"
