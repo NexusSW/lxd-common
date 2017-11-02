@@ -1,4 +1,3 @@
-require 'nexussw/lxd/transport'
 require 'nio/websocket'
 
 module NexusSW

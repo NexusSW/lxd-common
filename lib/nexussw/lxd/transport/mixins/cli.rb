@@ -1,5 +1,4 @@
-require 'nexussw/lxd/transport'
-require 'nexussw/lxd/transport/local'
+require 'nexussw/lxd/transport/mixins/local'
 require 'tempfile'
 require 'pp'
 
@@ -12,7 +11,7 @@ module NexusSW
             @container_name = container_name
             @config = config
             @inner_transport = remote_transport
-            @punt = !inner_transport.is_a?(::NexusSW::LXD::Transport::Local)
+            @punt = !inner_transport.is_a?(::NexusSW::LXD::Transport::Mixins::Local)
           end
           attr_reader :inner_transport, :punt, :container_name, :config
 

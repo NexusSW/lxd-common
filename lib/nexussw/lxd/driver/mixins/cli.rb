@@ -1,4 +1,3 @@
-require 'nexussw/lxd/driver'
 require 'tempfile'
 require 'yaml'
 require 'json'

@@ -1,4 +1,3 @@
-require 'nexussw/lxd/driver'
 require 'hyperkit'
 
 module NexusSW

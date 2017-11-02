@@ -1,4 +1,3 @@
-require 'nexussw/lxd/transport'
 require 'open3'
 require 'nio/websocket'
 
