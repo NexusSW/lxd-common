@@ -2,7 +2,7 @@ require 'nexussw/lxd'
 
 module NexusSW
   module LXD
-    module Transport
+    class Transport
       class LXDExecuteResult
         def initialize(command, options, exitstatus)
           @command = command
@@ -47,11 +47,25 @@ module NexusSW
         end
       end
 
-      # def execute(command, options = {}, &block)
-      # def read_file(_path)
-      # def write_file(_path, _content)
-      # def download_file(_path, _local_path)
-      # def upload_file(_local_path, _path)
+      def execute(_command, _options = {})
+        raise 'NexusSW::LXD::Transport.execute not implemented'
+      end
+
+      def read_file(_path)
+        raise 'NexusSW::LXD::Transport.read_file not implemented'
+      end
+
+      def write_file(_path, _content)
+        raise 'NexusSW::LXD::Transport.write_file not implemented'
+      end
+
+      def download_file(_path, _local_path)
+        raise 'NexusSW::LXD::Transport.download_file not implemented'
+      end
+
+      def upload_file(_local_path, _path)
+        raise 'NexusSW::LXD::Transport.upload_file not implemented'
+      end
       # protected
       # def execute_chunked(_command, _options = {})
     end

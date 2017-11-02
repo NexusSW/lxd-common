@@ -3,8 +3,8 @@ require 'yaml'
 
 module NexusSW
   module LXD
-    module Transport
-      class Mock
+    class Transport
+      class Mock < Transport
         def initialize(config = {})
           @config = config
           @@files['mock:'] ||= {}

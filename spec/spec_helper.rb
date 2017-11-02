@@ -11,26 +11,3 @@ require 'nexussw/lxd/transport/local'
 require 'nexussw/lxd/version'
 require 'support/shared_examples'
 require 'support/shared_contexts'
-
-module Driver
-  class CLI
-    include ::NexusSW::LXD::Driver::CLI
-  end
-
-  class Rest
-    include ::NexusSW::LXD::Driver::Rest
-  end
-end
-
-module Transport
-  class CLI
-    include ::NexusSW::LXD::Transport::CLI
-  end
-
-  class Rest
-    include ::NexusSW::LXD::Transport::Rest
-  end
-  class Local
-    include ::NexusSW::LXD::Transport::Local
-  end
-end
