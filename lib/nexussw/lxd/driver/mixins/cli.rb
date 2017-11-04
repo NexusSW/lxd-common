@@ -71,50 +71,25 @@ module NexusSW
             info['Status'].downcase
           end
 
-          def convert_keys(oldhash, level = 1)
+          def convert_keys(oldhash)
             return {} unless oldhash
             retval = {}
-            level -= 1
             oldhash.each do |k, v|
-              retval[k.to_sym] = level > 0 ? convert_keys(v, level) : v
+              retval[k.to_sym] = v.is_a?(Hash) ? convert_keys(v) : v
             end
             retval
           end
 
+          def container_info(container_id)
+            res = inner_transport.execute("lxc list #{container_id} --format=yaml")
+            res.error!
+            convert_keys YAML.load(res.stdout)['state']
+          end
+
           def container(container_id)
-            res = inner_transport.execute("lxc config show #{container_id}")
+            res = inner_transport.execute("lxc list #{container_id} --format=yaml")
             res.error!
-            config = YAML.load res.stdout
-            res = inner_transport.execute("lxc config show #{container_id} --expanded")
-            res.error!
-            expanded = YAML.load res.stdout
-            res = inner_transport.execute("lxc info #{container_id}")
-            res.error!
-            info = YAML.load res.stdout
-
-            # rearrange to match the REST version
-            expanded[:expanded_config] = expanded['config'] || {}
-            expanded[:expanded_devices] = expanded['devices'] || {}
-            expanded.delete 'config'
-            expanded.delete 'devices'
-            config = expanded.merge config
-
-            # add a few fields to more closely mimic the REST version
-            config[:created_at] = info['Created']
-            config[:name] = container_id
-            config[:status] = info['Status']
-            STATUS_CODES.each do |k, v|
-              if config[:status].downcase == v
-                config[:status_code] = k
-                break
-              end
-            end
-            retval = convert_keys(config)
-            retval[:config] = convert_keys(retval[:config])
-            retval[:expanded_config] = convert_keys(retval[:expanded_config])
-            retval[:devices] = convert_keys(retval[:devices], 2)
-            retval[:expanded_devices] = convert_keys(retval[:expanded_devices], 2)
-            retval
+            convert_keys YAML.load(res.stdout)['container']
           end
 
           def container_exists?(container_id)

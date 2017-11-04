@@ -48,6 +48,10 @@ module NexusSW
       def container(_container_id)
         raise 'NexusSW::LXD::Driver.container not implemented'
       end
+
+      def container_info(_container_id)
+        raise 'NexusSW::LXD::Driver.container_info not implemented'
+      end
     end
   end
 end
