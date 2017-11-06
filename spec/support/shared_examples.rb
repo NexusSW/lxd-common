@@ -20,6 +20,13 @@ shared_examples 'it can create containers' do
   it 'detects an existing container' do
     expect(driver.container_exists?(name)).to be true
   end
+
+  it 'queries container information' do
+    expect(driver.container(name)).not_to be nil
+    expect(driver.container(name).key?(:state)).to be false
+    expect(driver.container_info(name)).not_to be nil
+    expect(driver.container_info(name).key?(:status_code)).to be true
+  end
 end
 
 shared_examples 'Transport Functions' do

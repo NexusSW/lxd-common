@@ -108,15 +108,27 @@ module NexusSW::Hyperkit
       # @hk.container_state(container_id)['status_code'].to_i
       # 102	=> 'stopped',
       # 103	=> 'running',
-      yaml = ''
-      mock.execute "lxc info #{container_name}" do |stdout_chunk, _stderr_chunk|
-        yaml += stdout_chunk
+      json = ''
+      mock.execute "lxc list #{container_name}" do |stdout_chunk, _stderr_chunk|
+        json += stdout_chunk
       end
-      status = YAML.load(yaml)['Status'].downcase
-      NexusSW::LXD::Driver::STATUS_CODES.each do |code, text|
-        return { 'status_code' => code } if status == text
+      convert_keys JSON.parse(json)[0]['state']
+    end
+
+    def convert_keys(oldhash)
+      retval = {}
+      oldhash.each do |k, v|
+        retval[k.to_sym] = v.is_a?(Hash) ? convert_keys(v) : v
       end
-      nil
+      retval
+    end
+
+    def container(container_name)
+      json = ''
+      mock.execute "lxc list #{container_name}" do |stdout_chunk|
+        json += stdout_chunk
+      end
+      convert_keys(JSON.parse(json)[0]).except :state
     end
   end
 end

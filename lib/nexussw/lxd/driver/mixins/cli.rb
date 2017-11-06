@@ -80,16 +80,26 @@ module NexusSW
             retval
           end
 
+          # YAML is not supported until somewhere in the feature branch
+          #   the YAML return has :state and :container at the root level
+          # the JSON return has no :container (:container is root)
+          #   and has :state underneath that
           def container_info(container_id)
-            res = inner_transport.execute("lxc list #{container_id} --format=yaml")
+            res = inner_transport.execute("lxc list #{container_id} --format=json")
             res.error!
-            convert_keys YAML.load(res.stdout)['state']
+            JSON.parse(res.stdout).each do |c|
+              return convert_keys(c['state']) if c['name'] == container_id
+            end
+            nil
           end
 
           def container(container_id)
-            res = inner_transport.execute("lxc list #{container_id} --format=yaml")
+            res = inner_transport.execute("lxc list #{container_id} --format=json")
             res.error!
-            convert_keys YAML.load(res.stdout)['container']
+            JSON.parse(res.stdout).each do |c|
+              return convert_keys(c.except('state')) if c['name'] == container_id
+            end
+            nil
           end
 
           def container_exists?(container_id)

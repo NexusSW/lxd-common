@@ -28,11 +28,11 @@ module NexusSW
             case args[0]
             when 'lxc'
               case args[1]
-              when 'info' then
-                yield @@containers[args[2]].to_yaml
+              when 'list' then yield "[#{@@containers[args[2]].to_json}]"
+              when 'info' then yield @@containers[args[2]].to_yaml
               when 'launch'
                 exitstatus = 1 unless args[2].include? 'ubuntu:'
-                @@containers[args[3]] = { 'Status' => 'Running' } if args[2].include? 'ubuntu:'
+                @@containers[args[3]] = { 'Status' => 'Running', 'status_code' => 103, 'name' => args[3], 'state' => { 'status_code' => 103 } } if args[2].include? 'ubuntu:'
               when 'exec'
                 yield('/') unless command.include? '-- lxc'
                 if command.include? '-- lxc'
@@ -41,8 +41,12 @@ module NexusSW
                 end
               when 'start'
                 @@containers[args[2]]['Status'] = 'Running'
+                @@containers[args[2]]['status_code'] = 103
+                @@containers[args[2]]['state']['status_code'] = 103
               when 'stop'
                 @@containers[args[2]]['Status'] = 'Stopped'
+                @@containers[args[2]]['status_code'] = 102
+                @@containers[args[2]]['state']['status_code'] = 102
               when 'delete' then @@containers.delete args[2]
               when 'file'
                 local = options[:hostcontainer] || 'mock:'
