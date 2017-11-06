@@ -24,8 +24,8 @@ shared_examples 'it can create containers' do
   it 'queries container information' do
     expect(driver.container(name)).not_to be nil
     expect(driver.container(name).key?(:state)).to be false
-    expect(driver.container_info(name)).not_to be nil
-    expect(driver.container_info(name).key?(:status_code)).to be true
+    expect(driver.container_state(name)).not_to be nil
+    expect(driver.container_state(name).key?(:status_code)).to be true
   end
 end
 

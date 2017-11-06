@@ -79,10 +79,10 @@ module NexusSW
           end
 
           def container_status(container_id)
-            STATUS_CODES[container_info(container_id)[:status_code].to_i]
+            STATUS_CODES[container_state(container_id)[:status_code].to_i]
           end
 
-          def container_info(container_id)
+          def container_state(container_id)
             @hk.container_state(container_id)
           end
 

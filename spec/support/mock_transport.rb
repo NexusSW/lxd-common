@@ -29,10 +29,10 @@ module NexusSW
             when 'lxc'
               case args[1]
               when 'list' then yield "[#{@@containers[args[2]].to_json}]"
-              when 'info' then yield @@containers[args[2]].to_yaml
+              # when 'info' then yield @@containers[args[2]].to_yaml
               when 'launch'
                 exitstatus = 1 unless args[2].include? 'ubuntu:'
-                @@containers[args[3]] = { 'Status' => 'Running', 'status_code' => 103, 'name' => args[3], 'state' => { 'status_code' => 103 } } if args[2].include? 'ubuntu:'
+                @@containers[args[3]] = { 'status_code' => 103, 'name' => args[3], 'state' => { 'status_code' => 103 } } if args[2].include? 'ubuntu:'
               when 'exec'
                 yield('/') unless command.include? '-- lxc'
                 if command.include? '-- lxc'
@@ -40,11 +40,11 @@ module NexusSW
                   return execute_chunked(subcommand, options.merge(hostcontainer: args[2]), &block)
                 end
               when 'start'
-                @@containers[args[2]]['Status'] = 'Running'
+                # @@containers[args[2]]['Status'] = 'Running'
                 @@containers[args[2]]['status_code'] = 103
                 @@containers[args[2]]['state']['status_code'] = 103
               when 'stop'
-                @@containers[args[2]]['Status'] = 'Stopped'
+                # @@containers[args[2]]['Status'] = 'Stopped'
                 @@containers[args[2]]['status_code'] = 102
                 @@containers[args[2]]['state']['status_code'] = 102
               when 'delete' then @@containers.delete args[2]

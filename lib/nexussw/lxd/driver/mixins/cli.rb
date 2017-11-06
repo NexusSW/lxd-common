@@ -62,13 +62,7 @@ module NexusSW
           end
 
           def container_status(container_id)
-            # too heavy for a quick status check - container call results in 3 lxc execs
-            # STATUSCODES[container(container_id)[:status_code].to_i]
-
-            res = inner_transport.execute("lxc info #{container_id}")
-            res.error!
-            info = YAML.load res.stdout
-            info['Status'].downcase
+            STATUS_CODES[container_state(container_id)[:status_code].to_i]
           end
 
           def convert_keys(oldhash)
@@ -84,7 +78,7 @@ module NexusSW
           #   the YAML return has :state and :container at the root level
           # the JSON return has no :container (:container is root)
           #   and has :state underneath that
-          def container_info(container_id)
+          def container_state(container_id)
             res = inner_transport.execute("lxc list #{container_id} --format=json")
             res.error!
             JSON.parse(res.stdout).each do |c|
