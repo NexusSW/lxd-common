@@ -67,13 +67,19 @@ module NexusSW
               return address[:address] if address[:family] == 'inet' && address[:address] && !address[:address].empty?
             end
           end
+          nil
         end
 
         def wait_for(container_name, what, timeout = 60)
           Timeout.timeout timeout do
-            case what
-            when :ip
-              check_for_ip(self, container_name)
+            loop do
+              retval = nil
+              case what
+              when :ip
+                retval = check_for_ip(self, container_name)
+              end
+              return retval if retval
+              sleep 0.5
             end
           end
         end
