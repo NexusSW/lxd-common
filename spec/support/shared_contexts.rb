@@ -18,6 +18,12 @@ end
 
 shared_context 'Driver Test' do |enable_nesting_tests = false|
   include_examples 'it can create containers'
+  it 'waits upon startup' do
+    ip = driver.wait_for(name, :ip)
+    expect(ip).not_to eq nil
+    expect(ip).not_to be_empty
+    expect(ip.is_a?(String)).to be true
+  end
   context 'Transport' do
     include_examples 'Transport Functions'
     include_context 'Nesting' if enable_nesting_tests

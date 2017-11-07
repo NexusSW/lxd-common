@@ -13,7 +13,7 @@ shared_examples 'it can create containers' do
   it 'creates a container' do
     # Requiring an image with lxd installed already, for 'easliy' testing nested containers
     expect(driver.create_container(name, alias: 'lts', server: 'https://cloud-images.ubuntu.com/releases', protocol: 'simplestreams', config: { 'security.privileged' => true, 'security.nesting' => true })).to eq name
-    sleep 5 # woah up to help with some startup race conditions - intentionally punting the same issues to the consumer
+    # sleep 5 # woah up to help with some startup race conditions - intentionally punting the same issues to the consumer
     expect(driver.container_status(name)).to eq('running') # TBD - find some way to avoid the sleep call - maybe tie into cloud init if i can convince myself to lock this test to containers that support that
   end
 
@@ -22,13 +22,14 @@ shared_examples 'it can create containers' do
   end
 
   it 'queries container information' do
-    expect(driver.wait_for(name, :ip)).not_to eq nil
-    expect(driver.wait_for(name, :ip)).not_to be_empty
-    expect(driver.wait_for(name, :ip).is_a?(String)).to be true
-    expect(driver.container(name)).not_to be nil
-    expect(driver.container(name).key?(:state)).to be false
-    expect(driver.container_state(name)).not_to be nil
-    expect(driver.container_state(name).key?(:status_code)).to be true
+    container = driver.container(name)
+    expect(container).not_to be nil
+    expect(container.key?(:state)).to be false
+    expect(container.key?(:status_code)).to be true
+
+    state = driver.container_state(name)
+    expect(state).not_to be nil
+    expect(state.key?(:status_code)).to be true
   end
 end
 
