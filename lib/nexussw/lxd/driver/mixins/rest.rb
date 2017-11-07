@@ -83,6 +83,7 @@ module NexusSW
           end
 
           def container_state(container_id)
+            return nil unless container_status(container_id) == 'running' # Parity with CLI
             @hk.container_state(container_id)
           end
 
@@ -96,6 +97,8 @@ module NexusSW
           rescue
             false
           end
+
+          include WaitMixin
 
           protected
 

@@ -21,6 +21,33 @@ module NexusSW
 
         include ExecuteMixin
 
+        def running_container_state
+          {
+            'status_code' => 103,
+            'network' => {
+              'eth0' => {
+                'addresses' => [{
+                  'address' => '127.0.0.1',
+                  'family' => 'inet',
+                }],
+              },
+            },
+          }
+        end
+
+        def new_container(name)
+          {
+            'status_code' => 103,
+            'name' => name,
+            'state' => running_container_state,
+            'expanded_devices' => {
+              'eth0' => {
+                'type' => 'nic',
+              },
+            },
+          }
+        end
+
         def execute_chunked(command, options, &block)
           exitstatus = 0
           args = command.is_a?(Array) ? command : command.split(' ')
@@ -32,7 +59,7 @@ module NexusSW
               # when 'info' then yield @@containers[args[2]].to_yaml
               when 'launch'
                 exitstatus = 1 unless args[2].include? 'ubuntu:'
-                @@containers[args[3]] = { 'status_code' => 103, 'name' => args[3], 'state' => { 'status_code' => 103 } } if args[2].include? 'ubuntu:'
+                @@containers[args[3]] = new_container(args[3]) if args[2].include? 'ubuntu:'
               when 'exec'
                 yield('/') unless command.include? '-- lxc'
                 if command.include? '-- lxc'
@@ -42,7 +69,7 @@ module NexusSW
               when 'start'
                 # @@containers[args[2]]['Status'] = 'Running'
                 @@containers[args[2]]['status_code'] = 103
-                @@containers[args[2]]['state'] =  { 'status_code' => 103 }
+                @@containers[args[2]]['state'] = running_container_state
               when 'stop'
                 # @@containers[args[2]]['Status'] = 'Stopped'
                 @@containers[args[2]]['status_code'] = 102

@@ -52,6 +52,32 @@ module NexusSW
       def container_state(_container_id)
         raise 'NexusSW::LXD::Driver.container_state not implemented'
       end
+
+      def wait_for(_what)
+        raise 'NexusSW::LXD::Driver.wait_for not implemented'
+      end
+
+      module WaitMixin
+        def check_for_ip(driver, container_name)
+          cc = driver.container(container_name)
+          state = driver.container_state(container_name)
+          cc[:expanded_devices].each do |nic, data|
+            next unless data[:type] == 'nic'
+            state[:network][nic][:addresses].each do |address|
+              return address[:address] if address[:family] == 'inet' && address[:address] && !address[:address].empty?
+            end
+          end
+        end
+
+        def wait_for(container_name, what, timeout = 60)
+          Timeout.timeout timeout do
+            case what
+            when :ip
+              check_for_ip(self, container_name)
+            end
+          end
+        end
+      end
     end
   end
 end

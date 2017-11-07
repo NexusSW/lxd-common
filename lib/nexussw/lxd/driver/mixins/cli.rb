@@ -66,10 +66,15 @@ module NexusSW
           end
 
           def convert_keys(oldhash)
-            return {} unless oldhash
+            return oldhash unless oldhash.is_a?(Hash) || oldhash.is_a?(Array)
             retval = {}
-            oldhash.each do |k, v|
-              retval[k.to_sym] = v.is_a?(Hash) ? convert_keys(v) : v
+            if oldhash.is_a? Array
+              retval = []
+              oldhash.each { |v| retval << convert_keys(v) }
+            else
+              oldhash.each do |k, v|
+                retval[k.to_sym] = convert_keys(v)
+              end
             end
             retval
           end
@@ -103,6 +108,8 @@ module NexusSW
           rescue
             false
           end
+
+          include WaitMixin
 
           protected
 

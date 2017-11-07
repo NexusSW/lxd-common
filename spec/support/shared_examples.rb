@@ -22,6 +22,7 @@ shared_examples 'it can create containers' do
   end
 
   it 'queries container information' do
+    expect(driver.wait_for(name, :ip)).to eq '127.0.0.1'
     expect(driver.container(name)).not_to be nil
     expect(driver.container(name).key?(:state)).to be false
     expect(driver.container_state(name)).not_to be nil
