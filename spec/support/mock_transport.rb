@@ -42,11 +42,11 @@ module NexusSW
               when 'start'
                 # @@containers[args[2]]['Status'] = 'Running'
                 @@containers[args[2]]['status_code'] = 103
-                @@containers[args[2]]['state']['status_code'] = 103
+                @@containers[args[2]]['state'] =  { 'status_code' => 103 }
               when 'stop'
                 # @@containers[args[2]]['Status'] = 'Stopped'
                 @@containers[args[2]]['status_code'] = 102
-                @@containers[args[2]]['state']['status_code'] = 102
+                @@containers[args[2]]['state'] = nil
               when 'delete' then @@containers.delete args[2]
               when 'file'
                 local = options[:hostcontainer] || 'mock:'

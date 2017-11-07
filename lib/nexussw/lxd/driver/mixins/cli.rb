@@ -62,7 +62,7 @@ module NexusSW
           end
 
           def container_status(container_id)
-            STATUS_CODES[container_state(container_id)[:status_code].to_i]
+            STATUS_CODES[container(container_id)[:status_code].to_i]
           end
 
           def convert_keys(oldhash)
@@ -78,6 +78,7 @@ module NexusSW
           #   the YAML return has :state and :container at the root level
           # the JSON return has no :container (:container is root)
           #   and has :state underneath that
+          # (CLI Only) and :state is only available if the container is running
           def container_state(container_id)
             res = inner_transport.execute("lxc list #{container_id} --format=json")
             res.error!
@@ -107,7 +108,9 @@ module NexusSW
 
           def wait_for_status(container_id, newstatus)
             loop do
-              return if container_status(container_id) == newstatus
+              status = container_status(container_id)
+              return if status == newstatus
+              NIO::WebSocket.logger.debug "#{container_id} status = '#{status}'.  Waiting for '#{newstatus}'"
               sleep 0.5
             end
           end
