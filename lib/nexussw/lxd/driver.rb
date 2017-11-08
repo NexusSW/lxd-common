@@ -77,6 +77,8 @@ module NexusSW
               case what
               when :ip
                 retval = check_for_ip(self, container_name)
+              else
+                raise 'unrecognized option'
               end
               return retval if retval
               sleep 0.5
