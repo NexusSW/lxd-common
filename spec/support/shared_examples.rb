@@ -34,6 +34,8 @@ shared_examples 'it can create containers' do
 end
 
 shared_examples 'Transport Functions' do
+  subject(:transport) { driver.transport_for name }
+
   it 'can execute a command in a container' do
     # expect { transport.execute(['ls', '-al', '/']).error! }.not_to raise_error
     expect(transport.execute(['ls', '-al', '/']).error!.stdout.length).to satisfy { |l| l > 0 }
@@ -50,7 +52,7 @@ shared_examples 'Transport Functions' do
   end
 
   it 'can upload a folder' do
-    expect { transport.upload_file('spec', '/tmp') }.not_to raise_error
+    expect { transport.upload_folder('spec', '/tmp') }.not_to raise_error
     expect(transport.read_file('/tmp/spec/support/shared_contexts.rb')).to eq(File.read('spec/support/shared_contexts.rb'))
   end
 

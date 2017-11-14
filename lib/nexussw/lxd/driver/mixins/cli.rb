@@ -14,6 +14,10 @@ module NexusSW
 
           attr_reader :inner_transport, :driver_options
 
+          def transport_for(container_name)
+            Transport::CLI.new inner_transport, container_name
+          end
+
           def create_container(container_name, container_options = {})
             if container_exists? container_name
               start_container container_name # Start for Parity with the below logic (`lxc launch` auto starts)

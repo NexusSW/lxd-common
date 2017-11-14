@@ -24,6 +24,10 @@ module NexusSW
 
           attr_reader :hk, :rest_endpoint, :driver_options
 
+          def transport_for(container_name)
+            Transport::Rest.new self, container_name
+          end
+
           def create_container(container_name, container_options = {})
             if container_exists?(container_name)
               start_container container_name # Start the container for Parity with the CLI

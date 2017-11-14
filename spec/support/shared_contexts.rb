@@ -8,11 +8,8 @@ shared_context 'Nesting' do
     subject(:name) { 'nested-' + base_name }
     subject(:driver) { NexusSW::LXD::Driver::CLI.new base_transport }
     include_context 'it can create containers'
-    context 'Nested CLI Transport' do
-      subject(:transport) { NexusSW::LXD::Transport::CLI.new base_transport, name }
-      include_context 'Transport Functions'
-    end
-    it_behaves_like 'it can teardown a container'
+    include_context 'Transport Functions'
+    include_context 'it can teardown a container'
   end
 end
 
