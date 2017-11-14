@@ -55,6 +55,7 @@ module NexusSW
           end
 
           def upload_file(local_path, path)
+            execute("mkdir -p #{File.dirname path}").error!
             return hk.push_file(local_path, container_name, path) if File.file? local_path
             if can_archive?
               flag, ext = compression
@@ -83,7 +84,7 @@ module NexusSW
           def can_archive?
             @can_archive ||= begin
                                `tar --version`
-                               !hk.is_a?(::NexusSW::Hyperkit::Mock)
+                               !hk.respond_to? 'mock?'
                              rescue
                                false
                              end

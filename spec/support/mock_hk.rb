@@ -17,6 +17,10 @@ module NexusSW::Hyperkit
       @waits[retval[:id]] = retval if options[:sync] == false
     end
 
+    def mock?
+      true
+    end
+
     def merge_async_results(results)
       return results unless @waits.key? results[:id]
       @waits[results[:id]].merge! results

@@ -58,7 +58,8 @@ module NexusSW
             localname = tfile || local_path
             localname = File.join(localname, File.basename(local_path)) if punt && File.directory?(local_path)
             inner_transport.upload_file local_path, tfile if tfile
-            execute("#{localname} #{container_name}#{path}", subcommand: 'file push -p -r', capture: false).error!
+            recurse = ' -p -r' if File.directory? local_path
+            execute("#{localname} #{container_name}#{path}", subcommand: "file push#{recurse}", capture: false).error!
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
