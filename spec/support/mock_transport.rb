@@ -1,3 +1,4 @@
+require 'nexussw/lxd/transport/mixins/execute'
 require 'spec_helper'
 require 'yaml'
 require 'pp'

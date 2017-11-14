@@ -1,3 +1,4 @@
+require 'nexussw/lxd/transport/mixins/execute'
 require 'open3'
 require 'nio/websocket'
 

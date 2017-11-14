@@ -1,3 +1,4 @@
+require 'nexussw/lxd/driver/mixins/wait'
 require 'tempfile'
 require 'yaml'
 require 'json'

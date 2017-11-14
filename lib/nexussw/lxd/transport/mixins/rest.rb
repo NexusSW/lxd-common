@@ -1,3 +1,4 @@
+require 'nexussw/lxd/transport/mixins/execute'
 require 'nio/websocket'
 require 'tempfile'
 
