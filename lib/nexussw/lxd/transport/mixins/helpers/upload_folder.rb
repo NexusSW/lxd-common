@@ -23,7 +23,7 @@ module NexusSW
                 tfile = Tempfile.new(container_name)
                 tfile.close
                 `tar -c#{flag}f #{tfile.path} -C #{File.dirname local_path} ./#{File.basename local_path}`
-                raise "Unable to create archive #{tfile.path}" if File.empty? tfile.path
+                raise "Unable to create archive #{tfile.path}" if File.zero? tfile.path
                 fname = '/tmp/' + File.basename(tfile.path) + ".tar#{ext}"
                 upload_file tfile.path, fname
                 execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xvf #{fname} && rm -rf #{fname}'").error!
