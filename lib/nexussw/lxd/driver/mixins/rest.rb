@@ -18,15 +18,18 @@ module NexusSW
               auto_sync: true
             )
             @hk = inner_driver || Hyperkit::Client.new(hkoptions)
-            # HACK: can't otherwise get at the request timeout because sawyer is in the way
-            # Beware of unused function in hyperkit: reset_agent  If that gets used it'll undo this timeout
-            # unneeded while default valued: @hk.agent.instance_variable_get(:@conn).options[:timeout] = REQUEST_TIMEOUT
           end
 
           attr_reader :hk, :rest_endpoint, :driver_options
 
+          include Helpers::WaitMixin
+
+          def server_info
+            @server_info ||= hk.get('/1.0')[:metadata]
+          end
+
           def transport_for(container_name)
-            Transport::Rest.new self, container_name
+            Transport::Rest.new container_name, info: server_info, connection: hk, driver_options: driver_options, rest_endpoint: rest_endpoint
           end
 
           def create_container(container_name, container_options = {})
@@ -34,7 +37,6 @@ module NexusSW
               start_container container_name # Start the container for Parity with the CLI
               return container_name
             end
-            # we'll break this apart and time it out for those with slow net (and this was my 3 minute stress test case with good net)
             # parity note: CLI will run indefinitely rather than timeout hence the 0 timeout
             retry_forever do
               @hk.create_container(container_name, container_options.merge(sync: false))
@@ -62,7 +64,7 @@ module NexusSW
                 unless use_last
                   # Keep resubmitting until the server complains (Stops will be ignored/hang if init is not yet listening for SIGPWR i.e. recently started)
                   begin
-                    last_id = @hk.stop_container(container_id, sync: false)[:id] # TODO: this 'could' hang for 2 minutes?  and then we'd never get a last_id if that's where the hang happens, and then it 'could' error on retry
+                    last_id = @hk.stop_container(container_id, sync: false)[:id]
                   rescue Hyperkit::BadRequest # Happens if a stop command has previously been accepted as well as other reasons.  handle that on next line
                     raise unless last_id # if we have a last_id then a prior stop command has successfully initiated so we'll just wait on that one
                     use_last = true
@@ -102,8 +104,6 @@ module NexusSW
           rescue
             false
           end
-
-          include Helpers::WaitMixin
 
           protected
 

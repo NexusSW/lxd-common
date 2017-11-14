@@ -1,4 +1,5 @@
 require 'nexussw/lxd/transport/mixins/helpers/execute'
+require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'nio/websocket'
 require 'tempfile'
 
@@ -7,18 +8,19 @@ module NexusSW
     class Transport
       module Mixins
         module Rest
-          def initialize(driver, container_name, config = {})
+          def initialize(container_name, config = {})
             @container_name = container_name
             @config = config
-            raise "The rest transport requires the Rest Driver.  You supplied #{driver}" unless driver.respond_to?(:hk) && driver.respond_to?(:rest_endpoint) # driver.is_a? NexusSW::LXD::Driver::Rest
-            @rest_endpoint = driver.rest_endpoint
-            @driver_options = driver.driver_options
-            @hk = driver.hk
+            @rest_endpoint = config[:rest_endpoint]
+            @driver_options = config[:driver_options]
+            @hk = config[:connection]
+            raise 'The rest transport requires the following keys: { :connection, :driver_options, :rest_endpoint }' unless @rest_endpoint && @hk && @driver_options
           end
 
           attr_reader :hk, :rest_endpoint, :container_name, :config
 
           include Helpers::ExecuteMixin
+          include Helpers::UploadFolder
 
           def execute_chunked(command, options = {}, &block)
             opid = nil
@@ -56,52 +58,7 @@ module NexusSW
           end
 
           def upload_file(local_path, path)
-            execute("mkdir -p #{File.dirname path}").error!
-            return hk.push_file(local_path, container_name, path) if File.file? local_path
-            if can_archive?
-              flag, ext = compression
-              begin
-                tfile = Tempfile.new(container_name)
-                tfile.close
-                `tar -c#{flag}f #{tfile.path} -C #{File.dirname local_path} ./#{File.basename local_path}`
-                raise "Unable to create archive #{tfile.path}" if File.empty? tfile.path
-                fname = '/tmp/' + File.basename(tfile.path) + ".tar#{ext}"
-                upload_file tfile.path, fname
-                execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xvf #{fname} && rm -rf #{fname}'").error!
-              ensure
-                tfile.unlink
-              end
-            else
-              Dir.entries(local_path).map { |f| (f == '.' || f == '..') ? nil : File.join(local_path, f) }.compact.each do |f|
-                newname = File.join(path, File.basename(local_path))
-                newname = File.join(newname, File.basename(f)) if File.file? f
-                upload_file f, newname
-              end
-            end
-          end
-
-          private
-
-          def can_archive?
-            @can_archive ||= begin
-                               `tar --version`
-                               !hk.respond_to? :mock
-                             rescue
-                               false
-                             end
-          end
-
-          # gzip(-z) or bzip2(-j) (these are the only 2 on trusty - hopefully other os's have one of these)
-          def compression
-            @compression ||= begin
-                               which = execute('bash -c "which gzip || which bzip2 || true"').stdout.strip
-                               which = File.basename(which) if which
-                               case which
-                               when 'gzip' then ['z', '.gz']
-                               when 'bzip2' then ['j', '.bzip2']
-                               else ['', '']
-                               end
-                             end
+            return hk.push_file(local_path, container_name, path)
           end
 
           protected

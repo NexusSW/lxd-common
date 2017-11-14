@@ -1,4 +1,5 @@
 require 'nexussw/lxd/transport/mixins/local'
+require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'tempfile'
 require 'pp'
 
@@ -13,7 +14,10 @@ module NexusSW
             @inner_transport = remote_transport
             @punt = !inner_transport.is_a?(::NexusSW::LXD::Transport::Mixins::Local)
           end
+
           attr_reader :inner_transport, :punt, :container_name, :config
+
+          include Helpers::UploadFolder
 
           def execute(command, options = {})
             mycommand = command.is_a?(Array) ? command.join(' ') : command
@@ -56,12 +60,15 @@ module NexusSW
           def upload_file(local_path, path)
             tfile = inner_mktmp if punt
             localname = tfile || local_path
-            localname = File.join(localname, File.basename(local_path)) if punt && File.directory?(local_path)
             inner_transport.upload_file local_path, tfile if tfile
-            recurse = ' -p -r' if File.directory? local_path
-            execute("#{localname} #{container_name}#{path}", subcommand: "file push#{recurse}", capture: false).error!
+            execute("#{localname} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
+          end
+
+          def upload_folder(local_path, path)
+            return super unless config[:info] && config[:info][:api_extensions] && config[:info][:api_extensions].include?('directory_manipulation')
+            execute("-r #{localname} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
           end
 
           def add_remote(host_name)

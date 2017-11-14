@@ -1,4 +1,5 @@
 require 'nexussw/lxd/transport/mixins/helpers/execute'
+require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'spec_helper'
 require 'yaml'
 require 'pp'
@@ -22,6 +23,7 @@ module NexusSW
         end
 
         include Mixins::Helpers::ExecuteMixin
+        include Mixins::Helpers::UploadFolder
 
         def running_container_state
           {
@@ -35,6 +37,10 @@ module NexusSW
               },
             },
           }
+        end
+
+        def mock
+          true
         end
 
         def new_container(name)
@@ -83,7 +89,7 @@ module NexusSW
                 remotehost, remotefile =  case args[2]
                                           when 'push'
                                             idx = 3
-                                            idx += 2 if args[3] == '-p' # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[3] == '-r' # rubocop:disable Metrics/BlockNesting
                                             localfile = args[idx]
                                             split_container_name args[idx + 1]
                                           when 'pull'
@@ -129,12 +135,6 @@ module NexusSW
         def upload_file(local_path, path)
           raise "File does not exist (#{localpath})" unless File.exist? local_path
           return @@files['mock:'][path] = File.read(local_path) if File.file? local_path
-          # @@files['mock:'][File.join(path, File.basename(local_path))] = :directory
-          Dir.entries(local_path).map { |f| (f == '.' || f == '..') ? nil : File.join(local_path, f) }.compact.each do |f|
-            dest = File.join(path, File.basename(local_path))
-            dest = File.join(dest, File.basename(f)) if File.file? f
-            upload_file f, dest
-          end
         end
       end
     end

@@ -12,6 +12,10 @@ module NexusSW::Hyperkit
 
     attr_reader :mock
 
+    def get(_endpoint)
+      { metadata: nil }
+    end
+
     def handle_async(options)
       retval = { id: SecureRandom.uuid }
       @waits[retval[:id]] = retval if options[:sync] == false

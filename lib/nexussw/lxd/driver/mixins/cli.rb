@@ -16,7 +16,7 @@ module NexusSW
           attr_reader :inner_transport, :driver_options
 
           def transport_for(container_name)
-            Transport::CLI.new inner_transport, container_name
+            Transport::CLI.new inner_transport, container_name, info: YAML.load(inner_transport.execute('lxc info').error!.stdout)
           end
 
           def create_container(container_name, container_options = {})
