@@ -1,4 +1,5 @@
 require 'nio/websocket'
+require 'tempfile'
 
 module NexusSW
   module LXD
@@ -54,7 +55,51 @@ module NexusSW
           end
 
           def upload_file(local_path, path)
-            hk.push_file local_path, container_name, path
+            return hk.push_file(local_path, container_name, path) if File.file? local_path
+            if can_archive?
+              flag, ext = compression
+              begin
+                tfile = Tempfile.new(container_name)
+                tfile.close
+                `tar -c#{flag}f #{tfile.path} -C #{File.dirname local_path} ./#{File.basename local_path}`
+                raise "Unable to create archive #{tfile.path}" if File.empty? tfile.path
+                fname = '/tmp/' + File.basename(tfile.path) + ".tar#{ext}"
+                upload_file tfile.path, fname
+                execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xvf #{fname} && rm -rf #{fname}'").error!
+              ensure
+                tfile.unlink
+              end
+            else
+              Dir.entries(local_path).map { |f| (f == '.' || f == '..') ? nil : File.join(local_path, f) }.compact.each do |f|
+                newname = File.join(path, File.basename(local_path))
+                newname = File.join(newname, File.basename(f)) if File.file? f
+                upload_file f, newname
+              end
+            end
+          end
+
+          private
+
+          def can_archive?
+            @can_archive ||= begin
+                               `tar --version`
+                               !hk.is_a?(::NexusSW::Hyperkit::Mock)
+                             rescue
+                               false
+                             end
+          end
+
+          # gzip(-z) or bzip2(-j) (these are the only 2 on trusty - hopefully other os's have one of these)
+          def compression
+            @compression ||= begin
+                               which = execute('bash -c "which gzip || which bzip2 || true"').stdout.strip
+                               which = File.basename(which) if which
+                               case which
+                               when 'gzip' then ['z', '.gz']
+                               when 'bzip2' then ['j', '.bzip2']
+                               else ['', '']
+                               end
+                             end
           end
 
           protected

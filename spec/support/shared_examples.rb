@@ -49,6 +49,11 @@ shared_examples 'Transport Functions' do
     expect(transport.read_file('/tmp/rspec2.tmp')).to eq(File.read('.rspec'))
   end
 
+  it 'can upload a folder' do
+    expect { transport.upload_file('spec', '/tmp') }.not_to raise_error
+    expect(transport.read_file('/tmp/spec/support/shared_contexts.rb')).to eq(File.read('spec/support/shared_contexts.rb'))
+  end
+
   tfile = Tempfile.new 'lxd-rspec-tests'
   begin
     tfile.close

@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'yaml'
+require 'pp'
 
 module NexusSW
   module LXD
@@ -80,8 +81,10 @@ module NexusSW
                 localfile = ''
                 remotehost, remotefile =  case args[2]
                                           when 'push'
-                                            localfile = args[3]
-                                            split_container_name args[4]
+                                            idx = 3
+                                            idx += 2 if args[3] == '-p' # rubocop:disable Metrics/BlockNesting
+                                            localfile = args[idx]
+                                            split_container_name args[idx + 1]
                                           when 'pull'
                                             localfile = args[4]
                                             split_container_name args[3]
@@ -90,6 +93,11 @@ module NexusSW
                 when 'push'
                   @@files[remotehost] ||= {}
                   @@files[remotehost][remotefile] = @@files[local][localfile]
+                  @@files[local].each do |f, content|
+                    if f.start_with?(localfile + '/') # rubocop:disable Metrics/BlockNesting
+                      @@files[remotehost][f.sub(File.dirname(localfile), remotefile)] = content
+                    end
+                  end
                 when 'pull'
                   @@files[local] ||= {}
                   @@files[local][localfile] = @@files[remotehost][remotefile]
@@ -118,7 +126,14 @@ module NexusSW
         end
 
         def upload_file(local_path, path)
-          @@files['mock:'][path] = File.read(local_path)
+          raise "File does not exist (#{localpath})" unless File.exist? local_path
+          return @@files['mock:'][path] = File.read(local_path) if File.file? local_path
+          # @@files['mock:'][File.join(path, File.basename(local_path))] = :directory
+          Dir.entries(local_path).map { |f| (f == '.' || f == '..') ? nil : File.join(local_path, f) }.compact.each do |f|
+            dest = File.join(path, File.basename(local_path))
+            dest = File.join(dest, File.basename(f)) if File.file? f
+            upload_file f, dest
+          end
         end
       end
     end
