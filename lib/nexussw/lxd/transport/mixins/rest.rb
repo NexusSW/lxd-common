@@ -1,4 +1,4 @@
-require 'nexussw/lxd/transport/mixins/execute'
+require 'nexussw/lxd/transport/mixins/helpers/execute'
 require 'nio/websocket'
 require 'tempfile'
 
@@ -18,7 +18,7 @@ module NexusSW
 
           attr_reader :hk, :rest_endpoint, :container_name, :config
 
-          include ExecuteMixin
+          include Helpers::ExecuteMixin
 
           def execute_chunked(command, options = {}, &block)
             opid = nil
@@ -34,7 +34,7 @@ module NexusSW
               begin
                 retval = hk.wait_for_operation opid
                 backchannel.exit if backchannel.respond_to? :exit
-                return LXDExecuteResult.new command, options, retval[:metadata][:return].to_i
+                return Helpers::ExecuteMixin::ExecuteResult.new command, options, retval[:metadata][:return].to_i
               rescue Faraday::TimeoutError => e
                 raise Timeout::Retry.new e # rubocop:disable Style/RaiseArgs
               end
@@ -85,7 +85,7 @@ module NexusSW
           def can_archive?
             @can_archive ||= begin
                                `tar --version`
-                               !hk.respond_to? 'mock?'
+                               !hk.respond_to? :mock
                              rescue
                                false
                              end

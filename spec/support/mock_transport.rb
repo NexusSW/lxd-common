@@ -1,4 +1,4 @@
-require 'nexussw/lxd/transport/mixins/execute'
+require 'nexussw/lxd/transport/mixins/helpers/execute'
 require 'spec_helper'
 require 'yaml'
 require 'pp'
@@ -21,7 +21,7 @@ module NexusSW
           [nil, filename]
         end
 
-        include ExecuteMixin
+        include Mixins::Helpers::ExecuteMixin
 
         def running_container_state
           {
@@ -109,7 +109,7 @@ module NexusSW
             # pp e, e.backtrace
             exitstatus = 1
           end
-          LXDExecuteResult.new(command, options, exitstatus)
+          Mixins::Helpers::ExecuteMixin::ExecuteResult.new(command, options, exitstatus)
         end
 
         def read_file(path)

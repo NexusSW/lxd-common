@@ -1,4 +1,4 @@
-require 'nexussw/lxd/driver/mixins/wait'
+require 'nexussw/lxd/driver/mixins/helpers/wait'
 require 'tempfile'
 require 'yaml'
 require 'json'
@@ -114,7 +114,7 @@ module NexusSW
             false
           end
 
-          include WaitMixin
+          include Helpers::WaitMixin
 
           protected
 
