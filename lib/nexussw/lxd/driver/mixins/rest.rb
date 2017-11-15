@@ -1,4 +1,5 @@
 require 'nexussw/lxd/driver/mixins/helpers/wait'
+require 'nexussw/lxd/transport/rest'
 require 'hyperkit'
 
 module NexusSW

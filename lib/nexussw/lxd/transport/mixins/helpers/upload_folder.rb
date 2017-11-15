@@ -18,15 +18,25 @@ module NexusSW
 
             def upload_using_tarball(local_path, path)
               return false unless can_archive?
+              # TODO: should I return false upon error?  i.e. retry with individual file uploads if this fails?
+              #   lets see how this does in the wild before deciding
               flag, ext = compression
               begin
                 tfile = Tempfile.new(container_name)
                 tfile.close
                 `tar -c#{flag}f #{tfile.path} -C #{File.dirname local_path} ./#{File.basename local_path}`
-                raise "Unable to create archive #{tfile.path}" if File.zero? tfile.path
+                # on that above note we'll do this at least
+                # raise "Unable to create archive #{tfile.path}" if File.zero? tfile.path
+                if File.zero? tfile.path
+                  @can_archive = false
+                  return false
+                end
                 fname = '/tmp/' + File.basename(tfile.path) + ".tar#{ext}"
                 upload_file tfile.path, fname
-                execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xvf #{fname} && rm -rf #{fname}'").error!
+                # TODO: serious: make sure the tar extract does an overwrite of existing files
+                #   multiple converge support as well as CI cycle/dev updated files get updated instead of .1 suffixed (?)
+                #   I think I need a flag (it's been a while)
+                execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xf #{fname} && rm -rf #{fname}'", capture: false).error!
               ensure
                 tfile.unlink
               end
@@ -35,6 +45,7 @@ module NexusSW
             private
 
             def can_archive?
+              return false if @can_archive == false
               @can_archive ||= begin
                                   # I don't want to code tarball logic into the mock transport
                                   return false if respond_to?(:hk) && hk.respond_to?(:mock)
