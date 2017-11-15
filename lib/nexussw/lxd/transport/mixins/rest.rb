@@ -58,7 +58,8 @@ module NexusSW
           end
 
           def upload_file(local_path, path)
-            return hk.push_file(local_path, container_name, path)
+            # return hk.push_file(local_path, container_name, path)
+            write_file(path, IO.binread(local_path))
           end
 
           protected
