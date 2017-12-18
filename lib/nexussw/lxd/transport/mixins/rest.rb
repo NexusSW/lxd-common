@@ -1,22 +1,26 @@
+require 'nexussw/lxd/transport/mixins/helpers/execute'
+require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'nio/websocket'
+require 'tempfile'
 
 module NexusSW
   module LXD
     class Transport
       module Mixins
         module Rest
-          def initialize(driver, container_name, config = {})
+          def initialize(container_name, config = {})
             @container_name = container_name
             @config = config
-            raise "The rest transport requires the Rest Driver.  You supplied #{driver}" unless driver.respond_to?(:hk) && driver.respond_to?(:rest_endpoint) # driver.is_a? NexusSW::LXD::Driver::Rest
-            @rest_endpoint = driver.rest_endpoint
-            @driver_options = driver.driver_options
-            @hk = driver.hk
+            @rest_endpoint = config[:rest_endpoint]
+            @driver_options = config[:driver_options]
+            @hk = config[:connection]
+            raise 'The rest transport requires the following keys: { :connection, :driver_options, :rest_endpoint }' unless @rest_endpoint && @hk && @driver_options
           end
 
           attr_reader :hk, :rest_endpoint, :container_name, :config
 
-          include ExecuteMixin
+          include Helpers::ExecuteMixin
+          include Helpers::UploadFolder
 
           def execute_chunked(command, options = {}, &block)
             opid = nil
@@ -32,7 +36,7 @@ module NexusSW
               begin
                 retval = hk.wait_for_operation opid
                 backchannel.exit if backchannel.respond_to? :exit
-                return LXDExecuteResult.new command, options, retval[:metadata][:return].to_i
+                return Helpers::ExecuteMixin::ExecuteResult.new command, options, retval[:metadata][:return].to_i
               rescue Faraday::TimeoutError => e
                 raise Timeout::Retry.new e # rubocop:disable Style/RaiseArgs
               end
@@ -54,7 +58,8 @@ module NexusSW
           end
 
           def upload_file(local_path, path)
-            hk.push_file local_path, container_name, path
+            # return hk.push_file(local_path, container_name, path)
+            write_file(path, IO.binread(local_path))
           end
 
           protected

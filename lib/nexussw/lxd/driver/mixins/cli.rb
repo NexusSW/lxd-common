@@ -1,3 +1,5 @@
+require 'nexussw/lxd/driver/mixins/helpers/wait'
+require 'nexussw/lxd/transport/cli'
 require 'tempfile'
 require 'yaml'
 require 'json'
@@ -13,6 +15,10 @@ module NexusSW
           end
 
           attr_reader :inner_transport, :driver_options
+
+          def transport_for(container_name)
+            Transport::CLI.new inner_transport, container_name, info: YAML.load(inner_transport.execute('lxc info').error!.stdout)
+          end
 
           def create_container(container_name, container_options = {})
             if container_exists? container_name
@@ -109,7 +115,7 @@ module NexusSW
             false
           end
 
-          include WaitMixin
+          include Helpers::WaitMixin
 
           protected
 

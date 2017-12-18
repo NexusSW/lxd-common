@@ -1,3 +1,4 @@
+require 'nexussw/lxd/transport/mixins/helpers/execute'
 require 'open3'
 require 'nio/websocket'
 
@@ -12,7 +13,7 @@ module NexusSW
 
           attr_reader :config
 
-          include ExecuteMixin
+          include Helpers::ExecuteMixin
 
           def execute_chunked(command, options)
             NIO::WebSocket::Reactor.start
@@ -36,7 +37,7 @@ module NexusSW
                 end
                 th.join
                 loop do
-                  return LXDExecuteResult.new(command, options, th.value.exitstatus) if th.value.exited? && mon_out && mon_err && mon_out.closed? && mon_err.closed?
+                  return Helpers::ExecuteMixin::ExecuteResult.new(command, options, th.value.exitstatus) if th.value.exited? && mon_out && mon_err && mon_out.closed? && mon_err.closed?
                   Thread.pass
                 end
               end

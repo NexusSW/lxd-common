@@ -14,7 +14,7 @@ describe 'Rest Driver' do
   end
   subject(:transport) { base_transport }
   def base_transport
-    NexusSW::LXD::Transport::Rest.new base_driver, base_name
+    base_driver.transport_for base_name
   end
   include_context 'Driver Test', :enable_nesting_tests
 end
@@ -34,7 +34,7 @@ context 'While wrapping a Local Transport' do
     end
     subject(:transport) { base_transport }
     def base_transport
-      NexusSW::LXD::Transport::CLI.new root_transport, base_name
+      base_driver.transport_for base_name
     end
     include_context 'Driver Test', :enable_nesting_tests
   end

@@ -12,6 +12,10 @@ module NexusSW::Hyperkit
 
     attr_reader :mock
 
+    def get(_endpoint)
+      { metadata: nil }
+    end
+
     def handle_async(options)
       retval = { id: SecureRandom.uuid }
       @waits[retval[:id]] = retval if options[:sync] == false
@@ -65,8 +69,9 @@ module NexusSW::Hyperkit
       handle_async options
     end
 
-    def delete_container(container_name)
+    def delete_container(container_name, options)
       mock.execute("lxc delete #{container_name}").error!
+      handle_async options
     end
 
     def read_file(container_name, path)

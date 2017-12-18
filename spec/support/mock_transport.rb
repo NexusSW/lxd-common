@@ -1,5 +1,8 @@
+require 'nexussw/lxd/transport/mixins/helpers/execute'
+require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'spec_helper'
 require 'yaml'
+require 'pp'
 
 module NexusSW
   module LXD
@@ -19,7 +22,8 @@ module NexusSW
           [nil, filename]
         end
 
-        include ExecuteMixin
+        include Mixins::Helpers::ExecuteMixin
+        include Mixins::Helpers::UploadFolder
 
         def running_container_state
           {
@@ -33,6 +37,10 @@ module NexusSW
               },
             },
           }
+        end
+
+        def mock
+          true
         end
 
         def new_container(name)
@@ -80,8 +88,10 @@ module NexusSW
                 localfile = ''
                 remotehost, remotefile =  case args[2]
                                           when 'push'
-                                            localfile = args[3]
-                                            split_container_name args[4]
+                                            idx = 3
+                                            idx += 1 if args[3] == '-r' # rubocop:disable Metrics/BlockNesting
+                                            localfile = args[idx]
+                                            split_container_name args[idx + 1]
                                           when 'pull'
                                             localfile = args[4]
                                             split_container_name args[3]
@@ -90,6 +100,11 @@ module NexusSW
                 when 'push'
                   @@files[remotehost] ||= {}
                   @@files[remotehost][remotefile] = @@files[local][localfile]
+                  @@files[local].each do |f, content|
+                    if f.start_with?(localfile + '/') # rubocop:disable Metrics/BlockNesting
+                      @@files[remotehost][f.sub(File.dirname(localfile), remotefile)] = content
+                    end
+                  end
                 when 'pull'
                   @@files[local] ||= {}
                   @@files[local][localfile] = @@files[remotehost][remotefile]
@@ -100,7 +115,7 @@ module NexusSW
             # pp e, e.backtrace
             exitstatus = 1
           end
-          LXDExecuteResult.new(command, options, exitstatus)
+          Mixins::Helpers::ExecuteMixin::ExecuteResult.new(command, options, exitstatus)
         end
 
         def read_file(path)
@@ -118,7 +133,8 @@ module NexusSW
         end
 
         def upload_file(local_path, path)
-          @@files['mock:'][path] = File.read(local_path)
+          raise "File does not exist (#{localpath})" unless File.exist? local_path
+          return @@files['mock:'][path] = File.read(local_path) if File.file? local_path
         end
       end
     end
