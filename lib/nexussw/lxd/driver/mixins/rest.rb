@@ -88,10 +88,18 @@ module NexusSW
             return unless container_exists? container_id
             stop_container container_id, force: true
 
-            # TODO: something upstream is causing a double-tap on the REST endpoint
-            # Do I want to just blind fire and use a wait loop against container_exists?
-            id = @hk.delete_container(container_id, sync: false)[:id]
-            @hk.wait_for_operation id
+            # ISSUE 17: something upstream is causing a double-tap on the REST endpoint
+            # Trying to just blind fire and use a wait loop against container_exists
+            # id =
+            @hk.delete_container(container_id, sync: false)
+            # [:id]
+            # @hk.wait_for_operation id
+
+            # I don't like this - it feels sloppy
+            loop do
+              sleep 0.3
+              break unless container_exists? container_id
+            end
           end
 
           def container_status(container_id)
