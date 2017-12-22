@@ -141,5 +141,13 @@ module NexusSW::Hyperkit
       end
       convert_keys(JSON.parse(json)[0]).except :state
     end
+
+    def containers
+      json = ''
+      mock.execute 'lxc list' do |stdout_chunk|
+        json += stdout_chunk
+      end
+      JSON.parse(json).keys
+    end
   end
 end

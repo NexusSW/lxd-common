@@ -116,10 +116,7 @@ module NexusSW
           end
 
           def container_exists?(container_id)
-            return true if container_status(container_id)
-            return false
-          rescue
-            false
+            hk.containers.include? container_id
           end
 
           protected

@@ -63,7 +63,7 @@ module NexusSW
             case args[0]
             when 'lxc'
               case args[1]
-              when 'list' then yield "[#{@@containers[args[2]].to_json}]"
+              when 'list' then (args[2] ? yield("[#{@@containers[args[2]].to_json}]") : yield(@@containers.to_json))
               # when 'info' then yield @@containers[args[2]].to_yaml
               when 'launch'
                 exitstatus = 1 unless args[2].include? 'ubuntu:'
