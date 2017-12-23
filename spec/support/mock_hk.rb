@@ -69,7 +69,7 @@ module NexusSW::Hyperkit
       handle_async options
     end
 
-    def delete_container(container_name, options)
+    def delete_container(container_name, options = {})
       mock.execute("lxc delete #{container_name}").error!
       handle_async options
     end

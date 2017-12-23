@@ -89,16 +89,15 @@ module NexusSW
             stop_container container_id, force: true
 
             # ISSUE 17: something upstream is causing a double-tap on the REST endpoint
-            # Trying to just blind fire and use a wait loop against container_exists
-            # id =
-            @hk.delete_container(container_id, sync: false)
-            # [:id]
-            # @hk.wait_for_operation id
-
-            # I don't like this - it feels sloppy
-            loop do
-              sleep 0.3
-              break unless container_exists? container_id
+            begin
+              @hk.delete_container container_id
+            rescue ::Hyperkit::BadRequest
+              LXD.with_timeout_and_retries timeout: 120 do
+                loop do
+                  return unless container_exists? container_id
+                  sleep 0.3
+                end
+              end
             end
           end
 
