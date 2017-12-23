@@ -91,7 +91,7 @@ module NexusSW
             # ISSUE 17: something upstream is causing a double-tap on the REST endpoint
             begin
               @hk.delete_container container_id
-            rescue ::Hyperkit::BadRequest
+            rescue ::Faraday::ConnectionFailed
               LXD.with_timeout_and_retries timeout: 120 do
                 loop do
                   return unless container_exists? container_id
