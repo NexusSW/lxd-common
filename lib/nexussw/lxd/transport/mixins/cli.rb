@@ -67,7 +67,7 @@ module NexusSW
           end
 
           def upload_folder(local_path, path)
-            return super unless config[:info] && config[:info][:api_extensions] && config[:info][:api_extensions].include?('directory_manipulation')
+            return super unless config[:info] && config[:info]['api_extensions'] && config[:info]['api_extensions'].include?('directory_manipulation')
             execute("-r #{localname} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
           end
 
