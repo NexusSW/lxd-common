@@ -8,6 +8,7 @@ module NexusSW::Hyperkit
     def initialize
       @mock = NexusSW::LXD::Transport::Mock.new
       @waits = {}
+      @logs = {}
     end
 
     attr_reader :mock
@@ -48,7 +49,7 @@ module NexusSW::Hyperkit
     def execute_command(container_name, command, options)
       res = mock.execute "lxc exec #{container_name} -- #{command}"
       # retval[:metadata][:fds][:'1']
-      retval = handle_async(options).merge metadata: {
+      metadata = {
         fds: {
           :'0' => '',
           :'1' => res.stdout,
@@ -56,7 +57,30 @@ module NexusSW::Hyperkit
         },
         return: res.exitstatus,
       }
+      metadata = {
+        output: {
+          :'1' => set_log(container_name, res.stdout),
+          :'2' => set_log(container_name, res.stderr),
+        },
+        return: res.exitstatus,
+      } if options[:record_output]
+      retval = handle_async(options).merge metadata: metadata
       merge_async_results retval
+    end
+
+    def set_log(container_name, data)
+      @logs[container_name] ||= {}
+      @logs[container_name].keys.length.to_s.tap do |len|
+        @logs[container_name][len] = data
+      end
+    end
+
+    def log(container_name, log_name)
+      @logs[container_name][log_name]
+    end
+
+    def delete_log(container_name, log_name)
+      @logs[container_name].delete log_name
     end
 
     def start_container(container_name, options)

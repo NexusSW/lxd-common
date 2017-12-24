@@ -2,6 +2,7 @@ require 'nexussw/lxd/transport/mixins/helpers/execute'
 require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'nio/websocket'
 require 'tempfile'
+require 'pp'
 
 module NexusSW
   module LXD
@@ -25,10 +26,15 @@ module NexusSW
           def execute_chunked(command, options = {}, &block)
             opid = nil
             backchannel = nil
-            if block_given? # Allow for an optimized case that doesn't require the support of 3 new websocket connections
+            getlogs = false
+            if block_given? && options[:capture] == true
               retval = hk.execute_command(container_name, command, wait_for_websocket: true, interactive: false, sync: false)
               opid = retval[:id]
               backchannel = ws_connect opid, retval[:metadata][:fds], &block
+            elsif block_given?
+              getlogs = true
+              retval = hk.execute_command(container_name, command, record_output: true, interactive: false, sync: false)
+              opid = retval[:id]
             else
               opid = hk.execute_command(container_name, command, sync: false)[:id]
             end
@@ -36,6 +42,19 @@ module NexusSW
               begin
                 retval = hk.wait_for_operation opid
                 backchannel.exit if backchannel.respond_to? :exit
+                if getlogs
+                  begin
+                    stdout_log = retval[:metadata][:output][:'1'].split('/').last
+                    stderr_log = retval[:metadata][:output][:'2'].split('/').last
+                    pp stdout_log, stderr_log
+                    stdout = hk.log container_name, stdout_log
+                    stderr = hk.log container_name, stderr_log
+                    yield stdout, stderr
+                  ensure
+                    hk.delete_log container_name, stdout_log
+                    hk.delete_log container_name, stderr_log
+                  end
+                end
                 return Helpers::ExecuteMixin::ExecuteResult.new command, options, retval[:metadata][:return].to_i
               rescue Faraday::TimeoutError => e
                 raise Timeout::Retry.new e # rubocop:disable Style/RaiseArgs
