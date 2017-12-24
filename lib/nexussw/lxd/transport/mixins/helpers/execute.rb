@@ -11,7 +11,8 @@ module NexusSW
                 @exitstatus = exitstatus
               end
 
-              attr_reader :exitstatus, :options, :command
+              attr_reader :options, :command
+              attr_accessor :exitstatus
 
               def stdout
                 options[:capture_options][:stdout] if options.key? :capture_options
@@ -21,11 +22,23 @@ module NexusSW
                 options[:capture_options][:stderr] if options.key? :capture_options
               end
 
+              def stdin
+                options[:capture_options][:stdin] if options.key? :capture_options
+              end
+
+              def wait
+                loop do
+                  break if options[:capture_options][:wait_callback].call
+                  Thread.pass
+                end if options.key?(:capture_options) && options[:capture_options][:wait_callback].respond_to?(:call)
+              end
+
               def error!
+                wait
                 return self if exitstatus == 0
                 msg = "Error: '#{command}' failed with exit code #{exitstatus}.\n"
-                msg += "STDOUT: #{stdout}" if stdout && !stdout.empty?
-                msg += "STDERR: #{stderr}" if stderr && !stderr.empty?
+                msg += "STDOUT: #{stdout}" if stdout.is_a?(String) && !stdout.empty?
+                msg += "STDERR: #{stderr}" if stderr.is_a?(String) && !stderr.empty?
                 raise msg
               end
             end

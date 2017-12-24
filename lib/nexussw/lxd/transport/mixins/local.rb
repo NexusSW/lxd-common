@@ -19,7 +19,7 @@ module NexusSW
             NIO::WebSocket::Reactor.start
             LXD.with_timeout_and_retries options do
               # Let's borrow the NIO::WebSocket reactor
-              Open3.popen3(command) do |_stdin, stdout, stderr, th|
+              Open3.popen3(command) do |stdin, stdout, stderr, th|
                 mon_out = mon_err = nil
                 NIO::WebSocket::Reactor.queue_task do
                   mon_out = NIO::WebSocket::Reactor.selector.register(stdout, :r)
@@ -35,10 +35,23 @@ module NexusSW
                     yield(nil, data) if data && block_given?
                   end
                 end
-                th.join
-                loop do
-                  return Helpers::ExecuteMixin::ExecuteResult.new(command, options, th.value.exitstatus) if th.value.exited? && mon_out && mon_err && mon_out.closed? && mon_err.closed?
-                  Thread.pass
+                if options[:capture] == :interactive
+                  # return immediately if interactive so that stdin may be used
+                  return Helpers::ExecuteMixin::ExecuteResult.new(command, options, -1).tap do |res|
+                    options[:capture_options] ||= {}
+                    options[:capture_options][:stdin] = stdin
+                    options[:capture_options][:wait_callback] = proc do
+                      return false unless th.value.exited?
+                      res.exitstatus = th.value.exitstatus
+                      mon_out && mon_err && mon_out.closed? && mon_err.closed?
+                    end
+                  end
+                else
+                  th.join
+                  loop do
+                    return Helpers::ExecuteMixin::ExecuteResult.new(command, options, th.value.exitstatus) if th.value.exited? && mon_out && mon_err && mon_out.closed? && mon_err.closed?
+                    Thread.pass
+                  end
                 end
               end
             end

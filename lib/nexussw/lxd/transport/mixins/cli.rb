@@ -19,7 +19,7 @@ module NexusSW
 
           include Helpers::UploadFolder
 
-          def execute(command, options = {})
+          def execute(command, options = {}, &block)
             mycommand = command.is_a?(Array) ? command.join(' ') : command
             subcommand = options[:subcommand] || "exec #{container_name} --"
             mycommand = "lxc #{subcommand} #{mycommand}"
@@ -27,7 +27,7 @@ module NexusSW
             # We would have competing timeout logic depending on who the inner transport is
             # I'll just let rest & local do the timeouts, and if inner is a chef sourced transport, they have timeout logic of their own
             # with_timeout_and_retries(options) do
-            inner_transport.execute mycommand, options
+            inner_transport.execute mycommand, options, &block
           end
 
           def read_file(path)
