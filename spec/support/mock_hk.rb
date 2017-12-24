@@ -48,8 +48,8 @@ module NexusSW::Hyperkit
       end
     end
 
-    def execute_command(container_name, command, options)
-      res = mock.execute "lxc exec #{container_name} -- #{command}"
+    def execute_command(container_name, command, options, &block)
+      res = mock.execute "lxc exec #{container_name} -- #{command}", options, &block
       # retval[:metadata][:fds][:'1']
       metadata = {
         fds: {
@@ -66,6 +66,12 @@ module NexusSW::Hyperkit
         },
         return: res.exitstatus,
       } if options[:record_output]
+      metadata = {
+        fds: {
+          :'0' => res.stdin,
+        },
+        return: res.exitstatus,
+      } if options[:capture] == :interactive
       retval = handle_async(options).merge metadata: metadata
       merge_async_results retval
     end

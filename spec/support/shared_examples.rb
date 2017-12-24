@@ -41,6 +41,12 @@ shared_examples 'Transport Functions' do
     expect(transport.execute(['ls', '-al', '/']).error!.stdout.length).to satisfy { |l| l > 0 }
   end
 
+  it 'can execute a command interactively' do
+    res = transport.execute('bash', capture: :interactive)
+    res.stdin.write 'ls -al /\n'
+    expect(res.error!.stdout.length).to satisfy { |l| l > 0 }
+  end
+
   it 'can output to a file' do
     expect { transport.write_file('/tmp/rspec.tmp', File.read('.rspec')) }.not_to raise_error
     expect(transport.read_file('/tmp/rspec.tmp')).to eq(File.read('.rspec'))
