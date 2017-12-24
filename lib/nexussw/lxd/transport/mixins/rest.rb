@@ -2,7 +2,6 @@ require 'nexussw/lxd/transport/mixins/helpers/execute'
 require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'nio/websocket'
 require 'tempfile'
-require 'pp'
 
 module NexusSW
   module LXD
@@ -43,10 +42,10 @@ module NexusSW
                 retval = hk.wait_for_operation opid
                 backchannel.exit if backchannel.respond_to? :exit
                 if getlogs
+                  stdout_log = stderr_log = nil
                   begin
                     stdout_log = retval[:metadata][:output][:'1'].split('/').last
                     stderr_log = retval[:metadata][:output][:'2'].split('/').last
-                    pp stdout_log, stderr_log
                     stdout = hk.log container_name, stdout_log
                     stderr = hk.log container_name, stderr_log
                     yield stdout, stderr
