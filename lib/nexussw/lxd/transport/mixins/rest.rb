@@ -27,7 +27,7 @@ module NexusSW
             opid = nil
             backchannel = nil
             getlogs = false
-            if block_given? && options[:capture] == true
+            if block_given? && (options[:capture] || !config[:info][:api_extensions].include?('container_exec_recording'))
               retval = hk.execute_command(container_name, command, wait_for_websocket: true, interactive: false, sync: false)
               opid = retval[:id]
               backchannel = ws_connect opid, retval[:metadata][:fds], &block
@@ -44,13 +44,12 @@ module NexusSW
                 backchannel.exit if backchannel.respond_to? :exit
                 if getlogs
                   begin
-                    pp retval
-                    stdout_log = retval[:metadata][:output][:'1'].split('/').last # """"""""""""" it's this is the line of the travis failure - one of these hashes is nil
+                    stdout_log = retval[:metadata][:output][:'1'].split('/').last
                     stderr_log = retval[:metadata][:output][:'2'].split('/').last
                     stdout = hk.log container_name, stdout_log
                     stderr = hk.log container_name, stderr_log
                     yield stdout, stderr
-#                  ensure
+                    # ensure # TODO: uncomment
                     hk.delete_log container_name, stdout_log
                     hk.delete_log container_name, stderr_log
                   end
