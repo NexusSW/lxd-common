@@ -61,8 +61,8 @@ module NexusSW
             @block = block
           end
 
-          def write(cmd)
-            @block.call '/'
+          def write(_cmd)
+            @block.call '/' if @block
           end
         end
 

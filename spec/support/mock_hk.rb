@@ -38,22 +38,23 @@ module NexusSW::Hyperkit
     class ::NexusSW::LXD::Transport::Rest
       class WSRetval
         def initialize(data)
-          @data = data
+          @waitlist = data
         end
-        attr_reader :data
+        attr_reader :waitlist
       end
+
       def ws_connect(_opid, endpoints)
         yield(endpoints[:'1'], endpoints[:'2']) if block_given?
-        # yield WSRetval.new(endpoint) if block_given? && endpoint
+        WSRetval.new :'0' => NexusSW::LXD::Transport::Mock::StdinStub.new
       end
     end
 
-    def execute_command(container_name, command, options, &block)
-      res = mock.execute "lxc exec #{container_name} -- #{command}", options, &block
+    def execute_command(container_name, command, options)
+      res = mock.execute "lxc exec #{container_name} -- #{command}"
       # retval[:metadata][:fds][:'1']
       metadata = {
         fds: {
-          :'0' => '',
+          :'0' => res.stdin,
           :'1' => res.stdout,
           :'2' => res.stderr,
         },
@@ -66,12 +67,6 @@ module NexusSW::Hyperkit
         },
         return: res.exitstatus,
       } if options[:record_output]
-      metadata = {
-        fds: {
-          :'0' => res.stdin,
-        },
-        return: res.exitstatus,
-      } if options[:capture] == :interactive
       retval = handle_async(options).merge metadata: metadata
       merge_async_results retval
     end
