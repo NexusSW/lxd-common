@@ -49,7 +49,7 @@ module NexusSW
                     stdout = hk.log container_name, stdout_log
                     stderr = hk.log container_name, stderr_log
                     yield stdout, stderr
-                  ensure
+#                  ensure
                     hk.delete_log container_name, stdout_log
                     hk.delete_log container_name, stderr_log
                   end
