@@ -14,7 +14,9 @@ module NexusSW::Hyperkit
     attr_reader :mock
 
     def get(_endpoint)
-      { metadata: nil }
+      { metadata: {
+        api_extensions: ['container_exec_recording'],
+      } }
     end
 
     def handle_async(options)
