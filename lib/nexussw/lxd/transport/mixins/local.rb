@@ -41,10 +41,12 @@ module NexusSW
                     options[:capture_options] ||= {}
                     options[:capture_options][:stdin] = stdin
                     options[:capture_options][:wait_callback] = proc do
-                      return false unless mon_out && mon_err # make sure the above async's run before this block does
-                      return false unless th.value.exited?
-                      res.exitstatus = th.value.exitstatus
-                      mon_out.closed? && mon_err.closed?
+                      if mon_out && mon_err && th.value.exited?
+                        res.exitstatus = th.value.exitstatus
+                        mon_out.closed? && mon_err.closed?
+                      else
+                        false
+                      end
                     end
                   end
                 else
