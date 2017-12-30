@@ -44,11 +44,12 @@ shared_examples 'Transport Functions' do
   it 'can execute a command interactively' do
     data = ''
     expect do
-      transport.execute('bash', capture: :interactive) do |active|
+      transport.execute('/bin/bash', capture: :interactive) do |active|
         active.capture_output do |stdout|
+          pp stdout
           data += stdout if stdout
         end
-        active.stdin.write 'ls -al /\n'
+        active.stdin.write "ls -al /\nexit\n"
         sleep 1
       end.error!
     end.not_to raise_error

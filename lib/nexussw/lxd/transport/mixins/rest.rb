@@ -31,7 +31,7 @@ module NexusSW
             attr_reader :driver
 
             def write(data)
-              driver.text data
+              driver.binary data
             end
           end
 
@@ -111,7 +111,7 @@ module NexusSW
             def initialize(ws_options, baseurl, endpoints, &block)
               @waitlist = {}
               @callback = block if block_given?
-              NIO::WebSocket.connect(baseurl + endpoints[:control], ws_options) do |driver|
+              waitlist[:control] = NIO::WebSocket.connect(baseurl + endpoints[:control], ws_options) do |driver|
                 driver.on :io_error do # usually I get an EOF
                   waitlist.each { |_, v| v.close if v.respond_to? :close }
                 end
