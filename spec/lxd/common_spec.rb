@@ -16,7 +16,7 @@ describe 'Rest Driver' do
   def base_transport
     base_driver.transport_for base_name
   end
-  include_context 'Driver Test' # , :enable_nesting_tests
+  include_context 'Driver Test', :enable_nesting_tests
 end
 
 context 'While wrapping a Local Transport' do

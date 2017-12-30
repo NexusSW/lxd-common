@@ -46,7 +46,6 @@ shared_examples 'Transport Functions' do
     expect do
       transport.execute('/bin/bash', capture: :interactive) do |active|
         active.capture_output do |stdout|
-          pp stdout
           data += stdout if stdout
         end
         active.stdin.write "ls -al /\nexit\n"

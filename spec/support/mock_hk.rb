@@ -51,7 +51,7 @@ module NexusSW::Hyperkit
           @buffer = nil
         end
 
-        def text(_data)
+        def binary(_data)
           callback.call '/'
         end
       end
