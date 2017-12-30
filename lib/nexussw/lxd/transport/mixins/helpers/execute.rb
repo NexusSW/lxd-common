@@ -11,8 +11,7 @@ module NexusSW
                 @exitstatus = exitstatus
               end
 
-              attr_reader :options, :command
-              attr_accessor :exitstatus
+              attr_reader :options, :command, :exitstatus
 
               def stdout
                 options[:capture_options][:stdout] if options.key? :capture_options
@@ -22,19 +21,7 @@ module NexusSW
                 options[:capture_options][:stderr] if options.key? :capture_options
               end
 
-              def stdin
-                options[:capture_options][:stdin] if options.key? :capture_options
-              end
-
-              def wait
-                loop do
-                  break if options[:capture_options][:wait_callback].call
-                  Thread.pass
-                end if options.key?(:capture_options) && options[:capture_options][:wait_callback].respond_to?(:call)
-              end
-
               def error!
-                wait
                 return self if exitstatus == 0
                 msg = "Error: '#{command}' failed with exit code #{exitstatus}.\n"
                 msg += "STDOUT: #{stdout}" if stdout.is_a?(String) && !stdout.empty?
@@ -57,6 +44,31 @@ module NexusSW
               end
 
               execute_chunked(command, options.merge(capture_options: capture_options), &capture_options[:capture])
+            end
+
+            class InteractiveResult < ExecuteResult
+              def initialize(command, options, exitstatus, stdin, thread = nil)
+                super(command, options, exitstatus)
+                @stdin = stdin
+                @thread = thread
+              end
+
+              attr_reader :stdin, :thread
+              attr_accessor :exitstatus
+
+              def capture_output(&block)
+                @block = block if block_given?
+              end
+
+              def send_output(stdout_chunk)
+                return unless @block
+                @block.call stdout_chunk
+              end
+
+              def error!
+                thread.join if thread.respond_to? :join
+                super
+              end
             end
           end
         end

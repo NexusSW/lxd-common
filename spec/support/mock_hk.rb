@@ -36,16 +36,28 @@ module NexusSW::Hyperkit
     end
 
     class ::NexusSW::LXD::Transport::Rest
-      class WSRetval
+      class WSDriverStub
         def initialize(data)
           @waitlist = data
+          @buffer = waitlist[:'0'] if waitlist[:'0']
+          waitlist[:'0'] = self # note: circular reference
         end
-        attr_reader :waitlist
+        attr_reader :waitlist, :callback
+
+        def callback=(newproc)
+          @callback = newproc
+          return unless @buffer
+          callback.call @buffer
+        end
+
+        def text(_data)
+          callback.call '/'
+        end
       end
 
       def ws_connect(_opid, endpoints)
-        yield(endpoints[:'1'], endpoints[:'2']) if block_given?
-        WSRetval.new :'0' => NexusSW::LXD::Transport::Mock::StdinStub.new
+        yield(endpoints[:'1'], endpoints[:'2']) if block_given? && endpoints[:'1'] && endpoints[:'2']
+        WSDriverStub.new endpoints
       end
     end
 
@@ -54,12 +66,17 @@ module NexusSW::Hyperkit
       # retval[:metadata][:fds][:'1']
       metadata = {
         fds: {
-          :'0' => res.stdin,
           :'1' => res.stdout,
           :'2' => res.stderr,
         },
         return: res.exitstatus,
       }
+      metadata = {
+        fds: {
+          :'0' => res.stdout.to_s + res.stderr.to_s,
+        },
+        return: res.exitstatus,
+      } if options[:interactive]
       metadata = {
         output: {
           :'1' => set_log(container_name, res.stdout),

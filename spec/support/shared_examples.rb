@@ -42,9 +42,17 @@ shared_examples 'Transport Functions' do
   end
 
   it 'can execute a command interactively' do
-    res = transport.execute('bash', capture: :interactive)
-    res.stdin.write 'ls -al /\n'
-    expect(res.error!.stdout.length).to satisfy { |l| l > 0 }
+    data = ''
+    expect do
+      transport.execute('bash', capture: :interactive) do |active|
+        active.capture_output do |stdout|
+          data += stdout if stdout
+        end
+        active.stdin.write 'ls -al /\n'
+        sleep 1
+      end.error!
+    end.not_to raise_error
+    expect(data.length).to satisfy { |l| l > 0 }
   end
 
   it 'can output to a file' do

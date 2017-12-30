@@ -23,26 +23,38 @@ module NexusSW
           include Helpers::ExecuteMixin
           include Helpers::UploadFolder
 
+          # TODO: replace with a pipe
+          class StdinStub
+            def initialize(driver)
+              @driver = driver
+            end
+            attr_reader :driver
+
+            def write(data)
+              driver.text data
+            end
+          end
+
           def execute_chunked(command, options = {}, &block)
             opid = nil
             backchannel = nil
             getlogs = false
             if block_given? && (options[:capture] || !config[:info][:api_extensions].include?('container_exec_recording'))
-              retval = hk.execute_command(container_name, command, wait_for_websocket: true, interactive: false, sync: false)
+              hkopts = { wait_for_websocket: true, interactive: false, sync: false }
+              hkopts[:interactive] = true if options[:capture] == :interactive
+              retval = hk.execute_command(container_name, command, hkopts)
               opid = retval[:id]
-              backchannel = ws_connect opid, retval[:metadata][:fds], &block
-              return Helpers::ExecuteMixin::ExecuteResult.new(command, options, -1).tap do |res|
-                options[:capture_options][:stdin] = backchannel.waitlist[:'0']
-                options[:capture_options][:wait_callback] = proc do
-                  begin
-                    retval = hk.wait_for_operation opid
-                    backchannel.exit if backchannel.respond_to? :exit
-                    res.exitstatus = retval[:metadata][:return].to_i
-                    true
-                  rescue Faraday::TimeoutError
-                    false
-                  end
+              backchannel = options[:capture] == :interactive ? ws_connect(opid, retval[:metadata][:fds]) : ws_connect(opid, retval[:metadata][:fds], &block)
+
+              # patch for interactive session
+              return Helpers::ExecuteMixin::InteractiveResult.new(command, options, -1, StdinStub.new(backchannel.waitlist[:'0']), backchannel).tap do |active|
+                backchannel.callback = proc do |stdout|
+                  active.send_output stdout
                 end
+                yield active
+                backchannel.exit if backchannel.respond_to? :exit
+                retval = hk.wait_for_operation opid
+                active.exitstatus = retval[:metadata][:return].to_i
               end if options[:capture] == :interactive
             elsif block_given? && config[:info][:api_extensions].include?('container_exec_recording')
               getlogs = true
@@ -54,7 +66,7 @@ module NexusSW
             LXD.with_timeout_and_retries({ timeout: 0 }.merge(options)) do
               begin
                 retval = hk.wait_for_operation opid
-                backchannel.exit if backchannel.respond_to? :exit
+                backchannel.join if backchannel.respond_to? :join
                 if getlogs
                   begin
                     stdout_log = retval[:metadata][:output][:'1'].split('/').last
@@ -95,13 +107,48 @@ module NexusSW
 
           protected
 
-          class WSWrapper
-            def initialize(waitlist)
-              @waitlist = waitlist
+          class WSController
+            def initialize(ws_options, baseurl, endpoints, &block)
+              @waitlist = {}
+              @callback = block if block_given?
+              NIO::WebSocket.connect(baseurl + endpoints[:control], ws_options) do |driver|
+                driver.on :io_error do # usually I get an EOF
+                  waitlist.each { |_, v| v.close if v.respond_to? :close }
+                end
+                driver.on :close do # but on occasion I get a legit close
+                  waitlist.each { |_, v| v.close if v.respond_to? :close }
+                end
+              end
+              waitlist[:'2'] = NIO::WebSocket.connect(baseurl + endpoints[:'2'], ws_options) do |driver|
+                driver.on :message do |ev|
+                  data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
+                  callback.call nil, data
+                end
+              end if endpoints[:'2']
+              waitlist[:'1'] = NIO::WebSocket.connect(baseurl + endpoints[:'1'], ws_options) do |driver|
+                driver.on :message do |ev|
+                  data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
+                  callback.call data
+                end
+              end if endpoints[:'1']
+              waitlist[:'0'] = NIO::WebSocket.connect(baseurl + endpoints[:'0'], ws_options) do |driver|
+                driver.on :message do |ev|
+                  data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
+                  callback.call data
+                end
+              end
             end
+
             attr_reader :waitlist
+            attr_accessor :callback
 
             def exit
+              waitlist.each do |_fd, driver|
+                driver.close
+              end
+            end
+
+            def join
               loop do
                 allclosed = true
                 waitlist.each do |_fd, driver|
@@ -114,7 +161,7 @@ module NexusSW
             end
           end
 
-          def ws_connect(opid, endpoints)
+          def ws_connect(opid, endpoints, &block)
             # NIO::WebSocket.log_traffic = true
             verify_ssl = OpenSSL::SSL::VERIFY_NONE if @driver_options[:verify_ssl] == false
             ws_options = { ssl_context: { verify_mode: verify_ssl } } unless verify_ssl.nil?
@@ -123,34 +170,7 @@ module NexusSW
             baseurl += '/' unless baseurl.end_with? '/'
             baseurl += "1.0/operations/#{opid}/websocket?secret="
 
-            pipes = {}
-            NIO::WebSocket.connect(baseurl + endpoints[:control], ws_options) do |driver|
-              driver.on :io_error do # usually I get an EOF
-                pipes.each { |_, v| v.close if v.respond_to? :close }
-              end
-              driver.on :close do # but on occasion I get a legit close
-                pipes.each { |_, v| v.close if v.respond_to? :close }
-              end
-            end
-            pipes[:'2'] = NIO::WebSocket.connect(baseurl + endpoints[:'2'], ws_options) do |driver|
-              driver.on :message do |ev|
-                data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
-                yield nil, data
-              end
-            end if endpoints[:'2']
-            pipes[:'1'] = NIO::WebSocket.connect(baseurl + endpoints[:'1'], ws_options) do |driver|
-              driver.on :message do |ev|
-                data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
-                yield data
-              end
-            end if endpoints[:'1']
-            pipes[:'0'] = NIO::WebSocket.connect(baseurl + endpoints[:'0'], ws_options) do |driver|
-              driver.on :message do |ev|
-                data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
-                yield data
-              end
-            end
-            WSWrapper.new pipes
+            WSController.new ws_options, baseurl, endpoints, &block
           end
         end
       end
