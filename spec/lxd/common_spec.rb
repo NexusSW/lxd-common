@@ -18,6 +18,7 @@ describe 'Rest Driver' do
   end
   include_context 'Driver Test', :enable_nesting_tests
 end
+=begin
 context 'While wrapping a Local Transport' do
   subject(:transport) { root_transport }
   def root_transport
@@ -39,3 +40,4 @@ context 'While wrapping a Local Transport' do
     include_context 'Driver Test', :enable_nesting_tests
   end
 end
+=end

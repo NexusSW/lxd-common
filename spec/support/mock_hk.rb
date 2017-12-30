@@ -48,6 +48,7 @@ module NexusSW::Hyperkit
           @callback = newproc
           return unless @buffer
           callback.call @buffer
+          @buffer = nil
         end
 
         def text(_data)
