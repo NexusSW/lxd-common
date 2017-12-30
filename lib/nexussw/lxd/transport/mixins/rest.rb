@@ -25,13 +25,37 @@ module NexusSW
 
           # TODO: replace with a pipe
           class StdinStub
+            # return self as an IO (un)like object
             def initialize(driver)
               @driver = driver
             end
             attr_reader :driver
 
+            # return a real IO object
+            def self.pipe(driver)
+              NIO::WebSocket::Reactor.start
+              reader, writer = IO.pipe
+              NIO::WebSocket::Reactor.queue_task do
+                iomon = NIO::WebSocket::Reactor.selector.register(reader, :r)
+                iomon.value = proc do
+                  data = read(iomon)
+                  driver.binary data if data
+                end
+              end
+              writer
+            end
+
             def write(data)
               driver.binary data
+            end
+
+            def self.read(monitor)
+              monitor.io.read_nonblock(16384)
+            rescue IO::WaitReadable # rubocop:disable Lint/ShadowedException
+              return nil
+            rescue Errno::ECONNRESET, EOFError, IOError
+              monitor.close
+              return nil
             end
           end
 
@@ -47,7 +71,7 @@ module NexusSW
               backchannel = options[:capture] == :interactive ? ws_connect(opid, retval[:metadata][:fds]) : ws_connect(opid, retval[:metadata][:fds], &block)
 
               # patch for interactive session
-              return Helpers::ExecuteMixin::InteractiveResult.new(command, options, -1, StdinStub.new(backchannel.waitlist[:'0']), backchannel).tap do |active|
+              return Helpers::ExecuteMixin::InteractiveResult.new(command, options, -1, StdinStub.pipe(backchannel.waitlist[:'0']), backchannel).tap do |active|
                 backchannel.callback = proc do |stdout|
                   active.send_output stdout
                 end
