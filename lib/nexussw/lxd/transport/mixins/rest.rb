@@ -2,7 +2,6 @@ require 'nexussw/lxd/transport/mixins/helpers/execute'
 require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'nio/websocket'
 require 'tempfile'
-require 'pp'
 
 module NexusSW
   module LXD
