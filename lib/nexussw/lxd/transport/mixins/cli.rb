@@ -33,7 +33,7 @@ module NexusSW
           def read_file(path)
             tfile = inner_mktmp
             retval = execute("#{@container_name}#{path} #{tfile}", subcommand: 'file pull', capture: false)
-            return '' if retval.exitstatus == 1
+            # return '' if retval.exitstatus == 1
             retval.error!
             return inner_transport.read_file tfile
           ensure

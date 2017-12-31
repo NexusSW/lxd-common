@@ -42,7 +42,7 @@ module NexusSW
           end
 
           def read_file(path)
-            return '' unless File.exist? path
+            # return '' unless File.exist? path
             File.read path
           end
 

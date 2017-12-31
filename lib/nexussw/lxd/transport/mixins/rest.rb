@@ -97,7 +97,7 @@ module NexusSW
                     stdout = hk.log container_name, stdout_log
                     stderr = hk.log container_name, stderr_log
                     yield stdout, stderr
-                    # ensure # TODO: uncomment
+                  ensure
                     hk.delete_log container_name, stdout_log
                     hk.delete_log container_name, stderr_log
                   end
@@ -109,10 +109,11 @@ module NexusSW
             end
           end
 
+          # '' instead of Hyperkit::NotFound is a chef-provisioning expectation - at this level we'll let the exception propagate
           def read_file(path)
             hk.read_file container_name, path
-          rescue ::Hyperkit::NotFound
-            return ''
+            # rescue ::Hyperkit::NotFound
+            #   return ''
           end
 
           def write_file(path, content)
