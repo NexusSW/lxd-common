@@ -9,7 +9,6 @@ matrix:
   allow_failures:
   - rvm: ruby-head
 before_install:
-# - gem update --system
 - curl -L https://www.chef.io/chef/install.sh | sudo bash
 - sudo chef-apply spec/provision_recipe.rb
 - ip a && ip r
@@ -26,3 +25,11 @@ after_script:
 notifications:
   slack:
     secure: cMKi0hpXPZt8loD84alldIn3FCB0XBwHyOmh94MYnJ2GwtqGmrdDod5WLa36123z6XaDqpX0d/kXUZGWoVPTRK5QKWzlp/2bR6ZNGcWGFtB37UCjDweF9NRKgi56Nn2z3ws7qz/tG0MtH2991KjBh+Q5StaKHSTSh5BTHkLXFJ+YSW4ucY0PUctenF0sAz6vrLVNiYyrfWlGG6JBAd5LjinB6NdZHIDAl3yZ+IGrfxLXKAbLDgWcEVbXGOpQ0XSe7jiAzg7gi1ofOYuOR7JJzemQ8BzT6X42KPAAJxySz04UrTtxWkIPfX1OMwjlJB3RL932H+Ovv5KtU96VG8Z9npPK8li5uWYFLTwesH86sT1Kuah5Ct46D9d1LpZUzFt+sntGAQ5RY90QDItbr2OvkvPQ2kKjQpAsPb80x60yyhzWsJ3kZVejIuxv6pM7KF0hF1IHjj8YGRFtZxZx8NyYCoZaSUZQ+vl4djyHpvnKViNcXckgsMlJtQKfeluY1lOjGvciLctP/6rVKbOjGeENZc8TcwpnCZtmmBgrzW8wnY2/7f8q/kMILNqfu5YXTFQRYoJ3Nn7NP8oWlZ/hJN+Zt0ywIcxTswwzNfEM2/H8A4dSp8YZlI0kf09nAsLAgPQmaRcZjl8INzmlHEfy8vD+ooNDoPt7m7DlPpcNPKWzwjQ=
+deploy:
+  provider: rubygems
+  api_key:
+    secure: ggaLaFKzqIR4B8ofCVwEXAdEwgnvzDx++UTRS6hVNsLVA6QQxl4EmZvOhX/Dfv/M/CaeWSB5N04Rlo4h95KkCmCh4UHH9aCK/N5CK2NpbVuyVF8JVOiCaqEvGkPcQ6kHZE53E1w+xU6ag/I97ZXxwO0biSCiTgeFXXKPotXtBbDk2Kr3CPJ7zw5ry7n3ZBWeqrkoVzatBBLL+SONSnDvkL/rqVqffdYmyDz4Y/8tcn/Suk+FesARid4/J6DPgINgE4jNBu9VLwwb29QyN0hJAsE1csbEaOGXoI8xm444PF2HHlZdlfkpNf0ecX8h60mPqEKAztZLWT86asMrD337dpdVkWmQEgGU1bq4CGtJMqnGP4Yw+Qmip+jYaJu1Cc9/IKy/SzdtA4zzSjljrj3THxlnMMYILp50q9r+qyOPNoab3KutTis1ZOqD08pfQEfgsVVjmoSOFjRjbVMIVk89Si5pqehMdZKyV2n3KdEbyG/2MCsNDuBlV9ZaYShCMxSsDOo/x9vRwAP/E2Byud76crcoqGKS3if9oPj+bPPTjSLbYkSzoCYkus9TVp4sV43vgQ7FR9QwEY5oGQbSMdAXp65d43/SmSFRhBTqT6E4yfc18ivSyz6m0/ItHXTQHzHdfjfp5M2wnOWzWGO6oYM07L+XIWwUpzAI+KiXcRYe7PE=
+  gem: lxd-common
+  on:
+    tags: true
+    rvm: 2.4.2

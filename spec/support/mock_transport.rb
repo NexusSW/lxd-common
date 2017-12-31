@@ -56,6 +56,14 @@ module NexusSW
           }
         end
 
+        class StdinStub
+          attr_accessor :block
+
+          def write(_cmd)
+            @block.call '/' if @block
+          end
+        end
+
         def execute_chunked(command, options, &block)
           exitstatus = 0
           args = command.is_a?(Array) ? command : command.split(' ')
@@ -69,10 +77,20 @@ module NexusSW
                 exitstatus = 1 unless args[2].include? 'ubuntu:'
                 @@containers[args[3]] = new_container(args[3]) if args[2].include? 'ubuntu:'
               when 'exec'
-                yield('/') unless command.include? '-- lxc'
-                if command.include? '-- lxc'
-                  _, subcommand = command.split(' -- ', 2)
-                  return execute_chunked(subcommand, options.merge(hostcontainer: args[2]), &block)
+                if options[:capture] == :interactive
+                  stub = StdinStub.new(&block)
+                  return Mixins::Helpers::ExecuteMixin::InteractiveResult.new(command, options, 0, stub).tap do |active|
+                    stub.block = proc do |stdout|
+                      active.send_output stdout
+                    end
+                    yield active
+                  end
+                else
+                  yield('/') unless command.include? '-- lxc' # rubocop:disable Metrics/BlockNesting
+                  if command.include? '-- lxc' # rubocop:disable Metrics/BlockNesting
+                    _, subcommand = command.split(' -- ', 2)
+                    return execute_chunked(subcommand, options.merge(hostcontainer: args[2]), &block)
+                  end
                 end
               when 'start'
                 # @@containers[args[2]]['Status'] = 'Running'
