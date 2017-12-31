@@ -23,7 +23,6 @@ module NexusSW
           include Helpers::ExecuteMixin
           include Helpers::UploadFolder
 
-          # TODO: replace with a pipe
           class StdinStub
             # return self as an IO (un)like object
             def initialize(driver)
@@ -31,7 +30,7 @@ module NexusSW
             end
             attr_reader :driver
 
-            # return a real IO object
+            # return a real IO object for parity with Local Transport
             def self.pipe(driver)
               NIO::WebSocket::Reactor.start
               reader, writer = IO.pipe
