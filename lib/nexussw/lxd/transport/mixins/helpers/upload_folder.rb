@@ -36,7 +36,7 @@ module NexusSW
                 # TODO: serious: make sure the tar extract does an overwrite of existing files
                 #   multiple converge support as well as CI cycle/dev updated files get updated instead of .1 suffixed (?)
                 #   I think I need a flag (it's been a while)
-                execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xf #{fname} && rm -rf #{fname}'", capture: false).error!
+                execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xf #{fname} && rm -rf #{fname}'").error!
               ensure
                 tfile.unlink
               end

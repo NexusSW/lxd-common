@@ -8,12 +8,15 @@ module NexusSW::Hyperkit
     def initialize
       @mock = NexusSW::LXD::Transport::Mock.new
       @waits = {}
+      @logs = {}
     end
 
     attr_reader :mock
 
     def get(_endpoint)
-      { metadata: nil }
+      { metadata: {
+        api_extensions: ['container_exec_recording'],
+      } }
     end
 
     def handle_async(options)
@@ -33,30 +36,72 @@ module NexusSW::Hyperkit
     end
 
     class ::NexusSW::LXD::Transport::Rest
-      class WSRetval
+      class WSDriverStub
         def initialize(data)
-          @data = data
+          @waitlist = data
+          @buffer = waitlist[:'0'] if waitlist[:'0']
+          waitlist[:'0'] = self # note: circular reference
         end
-        attr_reader :data
+        attr_reader :waitlist, :callback
+
+        def callback=(newproc)
+          @callback = newproc
+          return unless @buffer
+          callback.call @buffer
+          @buffer = nil
+        end
+
+        def binary(_data)
+          callback.call '/'
+        end
       end
+
       def ws_connect(_opid, endpoints)
-        yield(endpoints[:'1'], endpoints[:'2']) if block_given?
-        # yield WSRetval.new(endpoint) if block_given? && endpoint
+        yield(endpoints[:'1'], endpoints[:'2']) if block_given? && endpoints[:'1'] && endpoints[:'2']
+        WSDriverStub.new endpoints
       end
     end
 
     def execute_command(container_name, command, options)
       res = mock.execute "lxc exec #{container_name} -- #{command}"
       # retval[:metadata][:fds][:'1']
-      retval = handle_async(options).merge metadata: {
+      metadata = {
         fds: {
-          :'0' => '',
           :'1' => res.stdout,
           :'2' => res.stderr,
         },
         return: res.exitstatus,
       }
+      metadata = {
+        fds: {
+          :'0' => res.stdout.to_s + res.stderr.to_s,
+        },
+        return: res.exitstatus,
+      } if options[:interactive]
+      metadata = {
+        output: {
+          :'1' => set_log(container_name, res.stdout),
+          :'2' => set_log(container_name, res.stderr),
+        },
+        return: res.exitstatus,
+      } if options[:record_output]
+      retval = handle_async(options).merge metadata: metadata
       merge_async_results retval
+    end
+
+    def set_log(container_name, data)
+      @logs[container_name] ||= {}
+      @logs[container_name].keys.length.to_s.tap do |len|
+        @logs[container_name][len] = data
+      end
+    end
+
+    def log(container_name, log_name)
+      @logs[container_name][log_name]
+    end
+
+    def delete_log(container_name, log_name)
+      @logs[container_name].delete log_name
     end
 
     def start_container(container_name, options)

@@ -19,7 +19,7 @@ module NexusSW
 
           include Helpers::UploadFolder
 
-          def execute(command, options = {})
+          def execute(command, options = {}, &block)
             mycommand = command.is_a?(Array) ? command.join(' ') : command
             subcommand = options[:subcommand] || "exec #{container_name} --"
             mycommand = "lxc #{subcommand} #{mycommand}"
@@ -27,13 +27,13 @@ module NexusSW
             # We would have competing timeout logic depending on who the inner transport is
             # I'll just let rest & local do the timeouts, and if inner is a chef sourced transport, they have timeout logic of their own
             # with_timeout_and_retries(options) do
-            inner_transport.execute mycommand, options
+            inner_transport.execute mycommand, options, &block
           end
 
           def read_file(path)
             tfile = inner_mktmp
             retval = execute("#{@container_name}#{path} #{tfile}", subcommand: 'file pull', capture: false)
-            return '' if retval.exitstatus == 1
+            # return '' if retval.exitstatus == 1
             retval.error!
             return inner_transport.read_file tfile
           ensure
@@ -67,8 +67,8 @@ module NexusSW
           end
 
           def upload_folder(local_path, path)
-            return super unless config[:info] && config[:info][:api_extensions] && config[:info][:api_extensions].include?('directory_manipulation')
-            execute("-r #{localname} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
+            return super unless config[:info] && config[:info]['api_extensions'] && config[:info]['api_extensions'].include?('directory_manipulation')
+            execute("-r #{local_path} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
           end
 
           def add_remote(host_name)
