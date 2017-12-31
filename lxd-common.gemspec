@@ -8,15 +8,9 @@ Gem::Specification.new do |spec|
   spec.version       = NexusSW::LXD::VERSION
   spec.authors       = ['Sean Zachariasen']
   spec.email         = ['thewyzard@hotmail.com']
-
+  spec.license       = 'Apache-2.0'
   spec.summary       = 'Shared LXD Container Access Library'
-  # spec.description   = %q{TODO: Write a longer description or delete this line.}
   spec.homepage      = 'http://github.com/NexusSW/lxd-common'
-
-  # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
-  # to allow pushing to a single host or delete this section to allow pushing to any host.
-
-  # spec.metadata['allowed_push_host'] = "TODO: Set to 'http://mygemserver.com'" if spec.respond_to?(:metadata)
 
   spec.files = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
