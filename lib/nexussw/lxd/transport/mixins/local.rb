@@ -21,7 +21,7 @@ module NexusSW
               Open3.popen3(command) do |stdin, stdout, stderr, th|
                 if options[:capture] == :interactive
                   # return immediately if interactive so that stdin may be used
-                  return Helpers::ExecuteMixin::InteractiveResult.new(command, options, -1, stdin, th).tap do |active|
+                  return Helpers::ExecuteMixin::InteractiveResult.new(command, options, stdin, th).tap do |active|
                     chunk_callback(stdout, stderr) do |stdout_chunk, stderr_chunk|
                       active.send_output stdout_chunk if stdout_chunk
                       active.send_output stderr_chunk if stderr_chunk

@@ -69,7 +69,7 @@ module NexusSW
               backchannel = options[:capture] == :interactive ? ws_connect(opid, retval[:metadata][:fds]) : ws_connect(opid, retval[:metadata][:fds], &block)
 
               # patch for interactive session
-              return Helpers::ExecuteMixin::InteractiveResult.new(command, options, -1, StdinStub.pipe(backchannel.waitlist[:'0']), backchannel).tap do |active|
+              return Helpers::ExecuteMixin::InteractiveResult.new(command, options, StdinStub.pipe(backchannel.waitlist[:'0']), backchannel).tap do |active|
                 backchannel.callback = proc do |stdout|
                   active.send_output stdout
                 end
