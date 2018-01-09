@@ -10,7 +10,6 @@ module NexusSW
           # PARITY note: CLI functions are on an indefinite timeout by default, yet we have a 2 minute socket read timeout
           # Leaving it alone, for now, on calls that are quick in nature
           # Adapting on known long running calls such as create, stop, execute
-          # REQUEST_TIMEOUT = 120 # upstream default: 120
           def initialize(rest_endpoint, driver_options = {}, inner_driver = nil)
             @rest_endpoint = rest_endpoint
             @driver_options = driver_options
