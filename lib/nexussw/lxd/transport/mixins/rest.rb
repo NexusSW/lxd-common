@@ -185,7 +185,7 @@ module NexusSW
             end
 
             def window_resize(width, height)
-              send_control_msg 'window-resize', width: width, height: height
+              send_control_msg 'window-resize', width: width.to_s, height: height.to_s
             end
 
             def signal(signum)
@@ -195,13 +195,15 @@ module NexusSW
             private
 
             def send_control_msg(message, val)
-              waitlist[:control].binary({}.tap do |retval|
+              msg = {}.tap do |retval|
                 retval['command'] = message
                 case message
                 when 'window-resize' then retval['args'] = val
                 when 'signal' then retval['signal'] = val.to_i
                 end
-              end.to_json)
+              end.to_json
+
+              waitlist[:control].binary msg
             end
           end
 
