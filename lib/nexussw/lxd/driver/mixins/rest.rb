@@ -1,6 +1,6 @@
+require 'nexussw/lxd/rest_api'
 require 'nexussw/lxd/driver/mixins/helpers/wait'
 require 'nexussw/lxd/transport/rest'
-require 'hyperkit'
 
 module NexusSW
   module LXD
@@ -18,7 +18,7 @@ module NexusSW
               api_endpoint: rest_endpoint,
               auto_sync: true
             )
-            @hk = inner_driver || Hyperkit::Client.new(hkoptions)
+            @hk = inner_driver || RestAPI.new(hkoptions)
           end
 
           attr_reader :hk, :rest_endpoint, :driver_options
