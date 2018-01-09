@@ -79,11 +79,12 @@ module NexusSW
               when 'exec'
                 if options[:capture] == :interactive
                   stub = StdinStub.new(&block)
-                  return Mixins::Helpers::ExecuteMixin::InteractiveResult.new(command, options, 0, stub).tap do |active|
+                  return Mixins::Helpers::ExecuteMixin::InteractiveResult.new(command, options, stub).tap do |active|
                     stub.block = proc do |stdout|
                       active.send_output stdout
                     end
                     yield active
+                    active.exitstatus = 0
                   end
                 else
                   yield('/') unless command.include? '-- lxc' # rubocop:disable Metrics/BlockNesting

@@ -47,8 +47,8 @@ module NexusSW
             end
 
             class InteractiveResult < ExecuteResult
-              def initialize(command, options, exitstatus, stdin, thread = nil)
-                super(command, options, exitstatus)
+              def initialize(command, options, stdin, thread = nil)
+                super(command, options, nil)
                 @stdin = stdin
                 @thread = thread
               end

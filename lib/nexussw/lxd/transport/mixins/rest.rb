@@ -2,6 +2,7 @@ require 'nexussw/lxd/transport/mixins/helpers/execute'
 require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'nio/websocket'
 require 'tempfile'
+require 'json'
 
 module NexusSW
   module LXD
@@ -69,7 +70,7 @@ module NexusSW
               backchannel = options[:capture] == :interactive ? ws_connect(opid, retval[:metadata][:fds]) : ws_connect(opid, retval[:metadata][:fds], &block)
 
               # patch for interactive session
-              return Helpers::ExecuteMixin::InteractiveResult.new(command, options, -1, StdinStub.pipe(backchannel.waitlist[:'0']), backchannel).tap do |active|
+              return Helpers::ExecuteMixin::InteractiveResult.new(command, options, StdinStub.pipe(backchannel.waitlist[:'0']), backchannel).tap do |active|
                 backchannel.callback = proc do |stdout|
                   active.send_output stdout
                 end
@@ -181,6 +182,28 @@ module NexusSW
                 Thread.pass
                 sleep 0.1
               end
+            end
+
+            def window_resize(width, height)
+              send_control_msg 'window-resize', width: width.to_s, height: height.to_s
+            end
+
+            def signal(signum)
+              send_control_msg 'signal', signum
+            end
+
+            private
+
+            def send_control_msg(message, val)
+              msg = {}.tap do |retval|
+                retval['command'] = message
+                case message
+                when 'window-resize' then retval['args'] = val
+                when 'signal' then retval['signal'] = val.to_i
+                end
+              end.to_json
+
+              waitlist[:control].binary msg
             end
           end
 
