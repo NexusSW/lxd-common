@@ -24,7 +24,7 @@ module NexusSW
             subcommand = options[:subcommand] || "exec #{container_name} --"
             mycommand = "lxc #{subcommand} #{mycommand}"
             # options = options.except :subcommand if options.key? :subcommand
-            options = options.reject { |k,_| k == :subcommand }
+            options = options.reject { |k, _| k == :subcommand }
             # We would have competing timeout logic depending on who the inner transport is
             # I'll just let rest & local do the timeouts, and if inner is a chef sourced transport, they have timeout logic of their own
             # with_timeout_and_retries(options) do
