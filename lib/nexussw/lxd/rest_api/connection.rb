@@ -70,7 +70,7 @@ module NexusSW
 
         def send_request(verb, relative_url, content = nil)
           response = connection.send(verb) do |req|
-            req.url = relative_url
+            req.url relative_url
             if content.is_a? Hash
               req.headers['Content-Type'] = 'application/json'
               req.body = content.to_json
