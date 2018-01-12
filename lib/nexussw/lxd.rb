@@ -32,7 +32,7 @@ module NexusSW
     def self.symbolize_keys(hash)
       {}.tap do |retval|
         hash.each do |k, v|
-          retval[k.to_sym] = v.is_a? Hash ? symbolize_keys(v) : v
+          retval[k.to_sym] = v.is_a?(Hash) ? symbolize_keys(v) : v
         end
       end
     end
