@@ -4,15 +4,16 @@ require 'shellwords'
 module NexusSW
   module LXD
     class RestAPI
-      def initialize(options)
-        @options = options
+      def initialize(api_options)
+        @api_options = api_options
       end
 
       include RestAPI::Connection
 
       def create_container(container_name, options)
         options, sync = parse_options options
-        handle_async post('/1.0/containers', options.merge(name: container_name)), sync
+        options[:config] = convert_bools(options[:config]) if options.key? :config
+        handle_async post('/1.0/containers', create_source(options).merge(name: container_name)), sync
       end
 
       def execute_command(container_name, command, options)
@@ -68,7 +69,15 @@ module NexusSW
       end
 
       def container(container_name)
-        get("/1.0/containers/#{container_name}")
+        exceptkeys = %w(config expanded_config)
+        get "/1.0/containers/#{container_name}" do |response|
+          retval = JSON.parse(response.body)['metadata']
+          lift = retval.select { |k, _| exceptkeys.include? k }
+          retval = LXD.symbolize_keys(retval.delete_if { |k, _| exceptkeys.include? k })
+          retval[:config] = lift['config'] if lift.key? 'config'
+          retval[:expanded_config] = lift['expanded_config'] if lift.key? 'expanded_config'
+          return retval
+        end
       end
 
       def containers
@@ -76,12 +85,14 @@ module NexusSW
       end
 
       def wait_for_operation(operation_id)
-        get "/1.0/operations/#{operation_id}/wait"
+        get "/1.0/operations/#{operation_id}/wait" do |response|
+          LXD.symbolize_keys(JSON.parse(response.body))
+        end
       end
 
       private
 
-      attr_reader :options
+      attr_reader :api_options
 
       def handle_async(data, sync)
         return data if sync == false
@@ -91,6 +102,26 @@ module NexusSW
       def parse_options(options)
         sync = options[:sync]
         [options.delete_if { |k, _| k == :sync }, sync]
+      end
+
+      def create_source(options)
+        moveprops = [:type, :alias, :fingerprint, :properties, :protocol, :server]
+        options.dup.tap do |retval|
+          retval[:source] = { type: 'image', mode: 'pull' }.merge(retval.select { |k, _| moveprops.include? k }) unless retval.key? :source
+          retval.delete_if { |k, _| moveprops.include? k }
+        end
+      end
+
+      def convert_bools(hash)
+        {}.tap do |retval|
+          hash.each do |k, v|
+            retval[k] = case v
+                        when true then 'true'
+                        when false then 'false'
+                        else v.is_a?(Hash) ? convert_bools(v) : v
+                        end
+          end
+        end
       end
     end
   end

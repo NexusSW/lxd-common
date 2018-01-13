@@ -44,11 +44,11 @@ module NexusSW
         end
 
         def baseurl
-          options[:api_endpoint]
+          api_options[:api_endpoint]
         end
 
         def ssl_opts
-          options[:ssl] || {}
+          api_options[:ssl] || {}
         end
 
         def cert
@@ -61,11 +61,11 @@ module NexusSW
 
         def verify_ssl
           return ssl_opts[:verify] if ssl_opts.key? :verify
-          options[:verify_ssl].nil? ? true : options[:verify_ssl]
+          api_options[:verify_ssl].nil? ? true : api_options[:verify_ssl]
         end
 
         def parse_response(response)
-          LXD.symbolize_keys(JSON.parse(response.body))[:metadata]
+          LXD.symbolize_keys(JSON.parse(response.body))
         end
 
         def send_request(verb, relative_url, content = nil)
@@ -77,6 +77,10 @@ module NexusSW
             elsif content
               req.body = content.to_s
             end
+          end
+          if response.status >= 400
+            err = JSON.parse(response.body)
+            raise "Error #{err['error_code']}: #{err['error']}"
           end
           block_given? ? yield(response) : parse_response(response)
         end
