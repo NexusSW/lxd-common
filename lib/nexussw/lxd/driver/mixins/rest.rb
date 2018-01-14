@@ -66,7 +66,7 @@ module NexusSW
                   unless use_last
                     # Keep resubmitting until the server complains (Stops will be ignored/hang if init is not yet listening for SIGPWR i.e. recently started)
                     begin
-                      last_id = @hk.stop_container(container_id, sync: false)[:id]
+                      last_id = @hk.stop_container(container_id, sync: false)[:metadata][:id]
                     rescue Hyperkit::BadRequest # Happens if a stop command has previously been accepted as well as other reasons.  handle that on next line
                       # if we have a last_id then a prior stop command has successfully initiated so we'll just wait on that one
                       raise unless last_id # rubocop:disable Metrics/BlockNesting
@@ -101,20 +101,20 @@ module NexusSW
           end
 
           def container_status(container_id)
-            STATUS_CODES[container(container_id)[:status_code].to_i]
+            STATUS_CODES[hk.container(container_id)[:metadata][:status_code].to_i]
           end
 
           def container_state(container_id)
             return nil unless container_status(container_id) == 'running' # Parity with CLI
-            @hk.container_state(container_id)
+            @hk.container_state(container_id)[:metadata]
           end
 
           def container(container_id)
-            @hk.container container_id
+            @hk.container(container_id)[:metadata]
           end
 
           def container_exists?(container_id)
-            hk.containers.include? container_id
+            hk.containers[:metadata].map { |url| url.split('/').last }.include? container_id
           end
 
           protected
@@ -132,7 +132,7 @@ module NexusSW
             retval = yield
             LXD.with_timeout_and_retries timeout: 0 do
               begin
-                @hk.wait_for_operation retval[:id]
+                @hk.wait_for_operation retval[:metadata][:id]
               rescue Faraday::TimeoutError => e
                 raise Timeout::Retry.new e # rubocop:disable Style/RaiseArgs
               end

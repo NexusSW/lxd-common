@@ -63,9 +63,9 @@ module NexusSW
             backchannel = nil
             getlogs = false
             if block_given? && (options[:capture] || !config[:info][:api_extensions].include?('container_exec_recording'))
-              hkopts = { wait_for_websocket: true, interactive: false, sync: false }
+              hkopts = { :'wait-for-websocket' => true, interactive: false, sync: false }
               hkopts[:interactive] = true if options[:capture] == :interactive
-              retval = hk.execute_command(container_name, command, hkopts)
+              retval = hk.execute_command(container_name, command, hkopts)[:metadata]
               opid = retval[:id]
               backchannel = options[:capture] == :interactive ? ws_connect(opid, retval[:metadata][:fds]) : ws_connect(opid, retval[:metadata][:fds], &block)
 
@@ -81,14 +81,14 @@ module NexusSW
               end if options[:capture] == :interactive
             elsif block_given? && config[:info][:api_extensions].include?('container_exec_recording')
               getlogs = true
-              retval = hk.execute_command(container_name, command, record_output: true, interactive: false, sync: false)
-              opid = retval[:id]
+              retval = hk.execute_command(container_name, command, :'record-output' => true, interactive: false, sync: false)
+              opid = retval[:metadata][:id]
             else
               opid = hk.execute_command(container_name, command, sync: false)[:id]
             end
             LXD.with_timeout_and_retries({ timeout: 0 }.merge(options)) do
               begin
-                retval = hk.wait_for_operation opid
+                retval = hk.wait_for_operation(opid)[:metadata]
                 backchannel.join if backchannel.respond_to? :join
                 if getlogs
                   begin

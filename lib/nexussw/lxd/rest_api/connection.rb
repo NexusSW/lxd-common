@@ -75,6 +75,7 @@ module NexusSW
               req.headers['Content-Type'] = 'application/json'
               req.body = content.to_json
             elsif content
+              req.headers['Content-Type'] = 'application/octet-stream'
               req.body = content.to_s
             end
           end

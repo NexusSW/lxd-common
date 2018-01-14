@@ -71,17 +71,18 @@ module NexusSW
       def container(container_name)
         exceptkeys = %w(config expanded_config)
         get "/1.0/containers/#{container_name}" do |response|
-          retval = JSON.parse(response.body)['metadata']
-          lift = retval.select { |k, _| exceptkeys.include? k }
-          retval = LXD.symbolize_keys(retval.delete_if { |k, _| exceptkeys.include? k })
-          retval[:config] = lift['config'] if lift.key? 'config'
-          retval[:expanded_config] = lift['expanded_config'] if lift.key? 'expanded_config'
+          retval = JSON.parse(response.body)
+          lift = retval['metadata'].select { |k, _| exceptkeys.include? k }
+          retval['metadata'].delete_if { |k, _| exceptkeys.include? k }
+          retval = LXD.symbolize_keys(retval)
+          retval[:metadata][:config] = lift['config'] if lift.key? 'config'
+          retval[:metadata][:expanded_config] = lift['expanded_config'] if lift.key? 'expanded_config'
           return retval
         end
       end
 
       def containers
-        get('/1.0/containers').map { |url| url.split('/').last }
+        get('/1.0/containers')
       end
 
       def wait_for_operation(operation_id)
@@ -96,7 +97,7 @@ module NexusSW
 
       def handle_async(data, sync)
         return data if sync == false
-        wait_for_operation data[:id]
+        wait_for_operation data[:metadata][:id]
       end
 
       def parse_options(options)
