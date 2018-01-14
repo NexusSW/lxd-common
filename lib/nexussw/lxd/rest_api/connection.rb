@@ -74,8 +74,11 @@ module NexusSW
             if content.is_a? Hash
               req.headers['Content-Type'] = 'application/json'
               req.body = content.to_json
-            elsif content
+            elsif content # Only upon file upload
               req.headers['Content-Type'] = 'application/octet-stream'
+              req.headers['X-LXD-uid'] = '0'
+              req.headers['X-LXD-gid'] = '0'
+              req.headers['X-LXD-mode'] = '0600'
               req.body = content.to_s
             end
           end

@@ -36,7 +36,8 @@ module NexusSW
                 # TODO: serious: make sure the tar extract does an overwrite of existing files
                 #   multiple converge support as well as CI cycle/dev updated files get updated instead of .1 suffixed (?)
                 #   I think I need a flag (it's been a while)
-                execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xf #{fname} && rm -rf #{fname}'").error!
+                # TODO: explore the chmod & make the same as if uploaded via CLI
+                execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xf #{fname} && rm -rf #{fname} && chmod -R 600 #{File.basename(local_path)}'").error!
               ensure
                 tfile.unlink
               end
