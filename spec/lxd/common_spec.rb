@@ -10,15 +10,15 @@ describe 'Rest Driver' do
   end
   subject(:driver) { base_driver }
   def base_driver
-    NexusSW::LXD::Driver::Rest.new 'https://wyzsrv:8443', verify_ssl: false
+    NexusSW::LXD::Driver::Rest.new 'https://localhost:8443', verify_ssl: false
   end
   subject(:transport) { base_transport }
   def base_transport
     base_driver.transport_for base_name
   end
-  include_context 'Driver Test' # , :enable_nesting_tests
+  include_context 'Driver Test', :enable_nesting_tests
 end
-=begin
+
 context 'While wrapping a Local Transport' do
   subject(:transport) { root_transport }
   def root_transport
@@ -40,4 +40,3 @@ context 'While wrapping a Local Transport' do
     include_context 'Driver Test', :enable_nesting_tests
   end
 end
-=end
