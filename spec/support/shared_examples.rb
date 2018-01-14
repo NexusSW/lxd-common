@@ -6,7 +6,7 @@ shared_examples 'it can create containers' do
   end
 
   it 'fails creating a container with bad options' do
-    expect { driver.create_container('iwontexist', alias: 'ubububuntu-idontexist') }.to raise_error # (Hyperkit::InternalServerError)
+    expect { driver.create_container('iwontexist', alias: 'ubububuntu-idontexist') }.to raise_error
     expect(driver.container_exists?('iwontexist')).not_to be true
   end
 

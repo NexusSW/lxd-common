@@ -3,7 +3,7 @@ require 'securerandom'
 require 'yaml'
 require 'tempfile'
 
-module NexusSW::Hyperkit
+class NexusSW::LXD::RestAPI
   class Mock
     def initialize
       @mock = NexusSW::LXD::Transport::Mock.new

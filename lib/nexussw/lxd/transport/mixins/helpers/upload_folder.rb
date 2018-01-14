@@ -49,10 +49,10 @@ module NexusSW
               return false if @can_archive == false
               @can_archive ||= begin
                                   # I don't want to code tarball logic into the mock transport
-                                  return false if respond_to?(:hk) && hk.respond_to?(:mock)
+                                  return false if respond_to?(:api) && api.respond_to?(:mock)
                                   return false if respond_to?(:inner_transport) && inner_transport.respond_to?(:mock)
                                   return false if respond_to?(:inner_transport) && inner_transport.respond_to?(:inner_transport) && inner_transport.inner_transport.respond_to?(:mock)
-                                  return false if respond_to?(:inner_transport) && inner_transport.respond_to?(:hk) && inner_transport.hk.respond_to?(:mock)
+                                  return false if respond_to?(:inner_transport) && inner_transport.respond_to?(:api) && inner_transport.api.respond_to?(:mock)
                                   `tar --version`
                                   true
                                 rescue

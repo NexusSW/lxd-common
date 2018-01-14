@@ -14,11 +14,11 @@ module NexusSW
             @config = config
             @rest_endpoint = config[:rest_endpoint]
             @driver_options = config[:driver_options]
-            @hk = config[:connection]
-            raise 'The rest transport requires the following keys: { :connection, :driver_options, :rest_endpoint }' unless @rest_endpoint && @hk && @driver_options
+            @api = config[:connection]
+            raise 'The rest transport requires the following keys: { :connection, :driver_options, :rest_endpoint }' unless @rest_endpoint && @api && @driver_options
           end
 
-          attr_reader :hk, :rest_endpoint, :container_name, :config
+          attr_reader :api, :rest_endpoint, :container_name, :config
 
           include Helpers::ExecuteMixin
           include Helpers::UploadFolder
@@ -63,9 +63,9 @@ module NexusSW
             backchannel = nil
             getlogs = false
             if block_given? && (options[:capture] || !config[:info][:api_extensions].include?('container_exec_recording'))
-              hkopts = { :'wait-for-websocket' => true, interactive: false, sync: false }
-              hkopts[:interactive] = true if options[:capture] == :interactive
-              retval = hk.execute_command(container_name, command, hkopts)[:metadata]
+              apiopts = { :'wait-for-websocket' => true, interactive: false, sync: false }
+              apiopts[:interactive] = true if options[:capture] == :interactive
+              retval = api.execute_command(container_name, command, apiopts)[:metadata]
               opid = retval[:id]
               backchannel = options[:capture] == :interactive ? ws_connect(opid, retval[:metadata][:fds]) : ws_connect(opid, retval[:metadata][:fds], &block)
 
@@ -76,30 +76,30 @@ module NexusSW
                 end
                 yield active
                 backchannel.exit if backchannel.respond_to? :exit
-                retval = hk.wait_for_operation opid
+                retval = api.wait_for_operation opid
                 active.exitstatus = retval[:metadata][:return].to_i
               end if options[:capture] == :interactive
             elsif block_given? && config[:info][:api_extensions].include?('container_exec_recording')
               getlogs = true
-              retval = hk.execute_command(container_name, command, :'record-output' => true, interactive: false, sync: false)
+              retval = api.execute_command(container_name, command, :'record-output' => true, interactive: false, sync: false)
               opid = retval[:metadata][:id]
             else
-              opid = hk.execute_command(container_name, command, sync: false)[:metadata][:id]
+              opid = api.execute_command(container_name, command, sync: false)[:metadata][:id]
             end
             LXD.with_timeout_and_retries({ timeout: 0 }.merge(options)) do
               begin
-                retval = hk.wait_for_operation(opid)[:metadata]
+                retval = api.wait_for_operation(opid)[:metadata]
                 backchannel.join if backchannel.respond_to? :join
                 if getlogs
                   begin
                     stdout_log = retval[:metadata][:output][:'1'].split('/').last
                     stderr_log = retval[:metadata][:output][:'2'].split('/').last
-                    stdout = hk.log container_name, stdout_log
-                    stderr = hk.log container_name, stderr_log
+                    stdout = api.log container_name, stdout_log
+                    stderr = api.log container_name, stderr_log
                     yield stdout, stderr
 
-                    hk.delete_log container_name, stdout_log
-                    hk.delete_log container_name, stderr_log
+                    api.delete_log container_name, stdout_log
+                    api.delete_log container_name, stderr_log
                   end
                 end
                 return Helpers::ExecuteMixin::ExecuteResult.new command, options, retval[:metadata][:return].to_i
@@ -109,23 +109,21 @@ module NexusSW
             end
           end
 
-          # '' instead of Hyperkit::NotFound is a chef-provisioning expectation - at this level we'll let the exception propagate
+          # empty '' instead of an exception is a chef-provisioning expectation - at this level we'll let the exception propagate
           def read_file(path)
-            hk.read_file container_name, path
-            # rescue ::Hyperkit::NotFound
-            #   return ''
+            api.read_file container_name, path
           end
 
           def write_file(path, content)
-            hk.write_file container_name, path, content: content
+            api.write_file container_name, path, content: content
           end
 
           def download_file(path, local_path)
-            hk.pull_file container_name, path, local_path
+            api.pull_file container_name, path, local_path
           end
 
           def upload_file(local_path, path)
-            # return hk.push_file(local_path, container_name, path)
+            # return api.push_file(local_path, container_name, path)
             write_file(path, IO.binread(local_path))
           end
 
