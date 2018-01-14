@@ -67,7 +67,7 @@ module NexusSW
                     # Keep resubmitting until the server complains (Stops will be ignored/hang if init is not yet listening for SIGPWR i.e. recently started)
                     begin
                       last_id = api.stop_container(container_id, sync: false)[:metadata][:id]
-                    rescue Hyperkit::BadRequest # Happens if a stop command has previously been accepted as well as other reasons.  handle that on next line
+                    rescue NexusSW::LXD::RestAPI::Error::BadRequest # Happens if a stop command has previously been accepted as well as other reasons.  handle that on next line
                       # if we have a last_id then a prior stop command has successfully initiated so we'll just wait on that one
                       raise unless last_id # rubocop:disable Metrics/BlockNesting
                       use_last = true
@@ -92,7 +92,7 @@ module NexusSW
             # trial return to normal
             # begin
             api.delete_container container_id
-            # rescue ::Faraday::ConnectionFailed, ::Hyperkit::BadRequest
+            # rescue ::Faraday::ConnectionFailed, ::NexusSW::LXD::RestAPI::Error::BadRequest
             #   LXD.with_timeout_and_retries timeout: 120 do
             #     loop do
             #       return unless container_exists? container_id

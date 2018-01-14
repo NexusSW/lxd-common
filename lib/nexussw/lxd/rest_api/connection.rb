@@ -84,7 +84,11 @@ module NexusSW
           end
           if response.status >= 400
             err = JSON.parse(response.body)
-            raise "Error #{err['error_code']}: #{err['error']}"
+            case err['error_code']
+            when 404 then raise RestAPI::Error::NotFound, err['error']
+            when 400 then raise RestAPI::Error::BadRequest, err['error']
+            else raise "Error #{err['error_code']}: #{err['error']}"
+            end
           end
           block_given? ? yield(response) : parse_response(response)
         end

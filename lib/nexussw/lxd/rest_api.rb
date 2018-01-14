@@ -1,4 +1,5 @@
 require 'nexussw/lxd/rest_api/connection'
+require 'nexussw/lxd/rest_api/errors'
 require 'shellwords'
 
 module NexusSW
