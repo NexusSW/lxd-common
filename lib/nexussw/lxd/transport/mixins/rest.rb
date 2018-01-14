@@ -84,7 +84,7 @@ module NexusSW
               retval = hk.execute_command(container_name, command, :'record-output' => true, interactive: false, sync: false)
               opid = retval[:metadata][:id]
             else
-              opid = hk.execute_command(container_name, command, sync: false)[:id]
+              opid = hk.execute_command(container_name, command, sync: false)[:metadata][:id]
             end
             LXD.with_timeout_and_retries({ timeout: 0 }.merge(options)) do
               begin
