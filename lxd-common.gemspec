@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'hyperkit', '~> 1.1'
+  spec.add_dependency 'faraday', '~> 0.13'
   spec.add_dependency 'nio4r-websocket', '~> 0.6'
 
   spec.add_development_dependency 'bundler'

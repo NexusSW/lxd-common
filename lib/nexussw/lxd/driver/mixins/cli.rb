@@ -103,7 +103,7 @@ module NexusSW
             res = inner_transport.execute("lxc list #{container_id} --format=json")
             res.error!
             JSON.parse(res.stdout).each do |c|
-              return convert_keys(c.except('state')) if c['name'] == container_id
+              return convert_keys(c.reject { |k, _| k == 'state' }) if c['name'] == container_id
             end
             nil
           end

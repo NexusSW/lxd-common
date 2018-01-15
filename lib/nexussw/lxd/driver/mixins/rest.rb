@@ -1,6 +1,6 @@
+require 'nexussw/lxd/rest_api'
 require 'nexussw/lxd/driver/mixins/helpers/wait'
 require 'nexussw/lxd/transport/rest'
-require 'hyperkit'
 
 module NexusSW
   module LXD
@@ -10,27 +10,26 @@ module NexusSW
           # PARITY note: CLI functions are on an indefinite timeout by default, yet we have a 2 minute socket read timeout
           # Leaving it alone, for now, on calls that are quick in nature
           # Adapting on known long running calls such as create, stop, execute
-          # REQUEST_TIMEOUT = 120 # upstream default: 120
           def initialize(rest_endpoint, driver_options = {}, inner_driver = nil)
             @rest_endpoint = rest_endpoint
             @driver_options = driver_options
-            hkoptions = (driver_options || {}).merge(
+            apioptions = (driver_options || {}).merge(
               api_endpoint: rest_endpoint,
               auto_sync: true
             )
-            @hk = inner_driver || Hyperkit::Client.new(hkoptions)
+            @api = inner_driver || RestAPI.new(apioptions)
           end
 
-          attr_reader :hk, :rest_endpoint, :driver_options
+          attr_reader :api, :rest_endpoint, :driver_options
 
           include Helpers::WaitMixin
 
           def server_info
-            @server_info ||= hk.get('/1.0')[:metadata]
+            @server_info ||= api.get('/1.0')[:metadata]
           end
 
           def transport_for(container_name)
-            Transport::Rest.new container_name, info: server_info, connection: hk, driver_options: driver_options, rest_endpoint: rest_endpoint
+            Transport::Rest.new container_name, info: server_info, connection: api, driver_options: driver_options, rest_endpoint: rest_endpoint
           end
 
           def create_container(container_name, container_options = {})
@@ -40,7 +39,7 @@ module NexusSW
             end
             # parity note: CLI will run indefinitely rather than timeout hence the 0 timeout
             retry_forever do
-              @hk.create_container(container_name, container_options.merge(sync: false))
+              api.create_container(container_name, container_options.merge(sync: false))
             end
             start_container container_name
             container_name
@@ -49,7 +48,7 @@ module NexusSW
           def start_container(container_id)
             return if container_status(container_id) == 'running'
             retry_forever do
-              @hk.start_container(container_id, sync: false)
+              api.start_container(container_id, sync: false)
             end
             wait_for_status container_id, 'running'
           end
@@ -57,7 +56,7 @@ module NexusSW
           def stop_container(container_id, options = {})
             return if container_status(container_id) == 'stopped'
             if options[:force]
-              @hk.stop_container(container_id, force: true)
+              api.stop_container(container_id, force: true)
             else
               last_id = nil
               use_last = false
@@ -67,14 +66,14 @@ module NexusSW
                   unless use_last
                     # Keep resubmitting until the server complains (Stops will be ignored/hang if init is not yet listening for SIGPWR i.e. recently started)
                     begin
-                      last_id = @hk.stop_container(container_id, sync: false)[:id]
-                    rescue Hyperkit::BadRequest # Happens if a stop command has previously been accepted as well as other reasons.  handle that on next line
+                      last_id = api.stop_container(container_id, sync: false)[:metadata][:id]
+                    rescue NexusSW::LXD::RestAPI::Error::BadRequest # Happens if a stop command has previously been accepted as well as other reasons.  handle that on next line
                       # if we have a last_id then a prior stop command has successfully initiated so we'll just wait on that one
                       raise unless last_id # rubocop:disable Metrics/BlockNesting
                       use_last = true
                     end
                   end
-                  @hk.wait_for_operation last_id # , options[:retry_interval]
+                  api.wait_for_operation last_id # , options[:retry_interval]
                 rescue Faraday::TimeoutError => e
                   return if container_status(container_id) == 'stopped'
                   raise Timeout::Retry.new e # if options[:retry_interval] # rubocop:disable Style/RaiseArgs
@@ -89,33 +88,35 @@ module NexusSW
             stop_container container_id, force: true
 
             # ISSUE 17: something upstream is causing a double-tap on the REST endpoint
-            begin
-              @hk.delete_container container_id
-            rescue ::Faraday::ConnectionFailed, ::Hyperkit::BadRequest
-              LXD.with_timeout_and_retries timeout: 120 do
-                loop do
-                  return unless container_exists? container_id
-                  sleep 0.3
-                end
-              end
-            end
+
+            # trial return to normal
+            # begin
+            api.delete_container container_id
+            # rescue ::Faraday::ConnectionFailed, ::NexusSW::LXD::RestAPI::Error::BadRequest
+            #   LXD.with_timeout_and_retries timeout: 120 do
+            #     loop do
+            #       return unless container_exists? container_id
+            #       sleep 0.3
+            #     end
+            #   end
+            # end
           end
 
           def container_status(container_id)
-            STATUS_CODES[container(container_id)[:status_code].to_i]
+            STATUS_CODES[api.container(container_id)[:metadata][:status_code].to_i]
           end
 
           def container_state(container_id)
             return nil unless container_status(container_id) == 'running' # Parity with CLI
-            @hk.container_state(container_id)
+            api.container_state(container_id)[:metadata]
           end
 
           def container(container_id)
-            @hk.container container_id
+            api.container(container_id)[:metadata]
           end
 
           def container_exists?(container_id)
-            hk.containers.include? container_id
+            api.containers[:metadata].map { |url| url.split('/').last }.include? container_id
           end
 
           protected
@@ -133,7 +134,7 @@ module NexusSW
             retval = yield
             LXD.with_timeout_and_retries timeout: 0 do
               begin
-                @hk.wait_for_operation retval[:id]
+                api.wait_for_operation retval[:metadata][:id]
               rescue Faraday::TimeoutError => e
                 raise Timeout::Retry.new e # rubocop:disable Style/RaiseArgs
               end

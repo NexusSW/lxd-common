@@ -1,3 +1,5 @@
+require 'nexussw/lxd/rest_api/errors'
+
 module NexusSW
   module LXD
     class Transport
@@ -26,7 +28,7 @@ module NexusSW
                 msg = "Error: '#{command}' failed with exit code #{exitstatus}.\n"
                 msg += "STDOUT: #{stdout}" if stdout.is_a?(String) && !stdout.empty?
                 msg += "STDERR: #{stderr}" if stderr.is_a?(String) && !stderr.empty?
-                raise msg
+                raise ::NexusSW::LXD::RestAPI::Error, msg
               end
             end
 

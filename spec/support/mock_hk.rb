@@ -3,7 +3,7 @@ require 'securerandom'
 require 'yaml'
 require 'tempfile'
 
-module NexusSW::Hyperkit
+class NexusSW::LXD::RestAPI
   class Mock
     def initialize
       @mock = NexusSW::LXD::Transport::Mock.new
@@ -20,13 +20,13 @@ module NexusSW::Hyperkit
     end
 
     def handle_async(options)
-      retval = { id: SecureRandom.uuid }
-      @waits[retval[:id]] = retval if options[:sync] == false
+      retval = { metadata: { id: SecureRandom.uuid } }
+      @waits[retval[:metadata][:id]] = retval if options[:sync] == false
     end
 
     def merge_async_results(results)
-      return results unless @waits.key? results[:id]
-      @waits[results[:id]].merge! results
+      return results unless @waits.key? results[:metadata][:id]
+      @waits[results[:metadata][:id]].merge! results
     end
 
     def create_container(container_name, options)
@@ -84,8 +84,9 @@ module NexusSW::Hyperkit
           :'2' => set_log(container_name, res.stderr),
         },
         return: res.exitstatus,
-      } if options[:record_output]
-      retval = handle_async(options).merge metadata: metadata
+      } if options[:'record-output']
+      retval = handle_async(options)
+      retval[:metadata][:metadata] = metadata
       merge_async_results retval
     end
 
@@ -162,21 +163,7 @@ module NexusSW::Hyperkit
       mock.execute "lxc list #{container_name}" do |stdout_chunk, _stderr_chunk|
         json += stdout_chunk
       end
-      convert_keys JSON.parse(json)[0]['state']
-    end
-
-    def convert_keys(oldhash)
-      return oldhash unless oldhash.is_a?(Hash) || oldhash.is_a?(Array)
-      retval = {}
-      if oldhash.is_a? Array
-        retval = []
-        oldhash.each { |v| retval << convert_keys(v) }
-      else
-        oldhash.each do |k, v|
-          retval[k.to_sym] = convert_keys(v)
-        end
-      end
-      retval
+      { metadata: NexusSW::LXD.symbolize_keys(JSON.parse(json)[0]['state']) }
     end
 
     def container(container_name)
@@ -184,7 +171,7 @@ module NexusSW::Hyperkit
       mock.execute "lxc list #{container_name}" do |stdout_chunk|
         json += stdout_chunk
       end
-      convert_keys(JSON.parse(json)[0]).except :state
+      { metadata: NexusSW::LXD.symbolize_keys(JSON.parse(json)[0]).reject { |k, _| k == :state } }
     end
 
     def containers
@@ -192,7 +179,7 @@ module NexusSW::Hyperkit
       mock.execute 'lxc list' do |stdout_chunk|
         json += stdout_chunk
       end
-      JSON.parse(json).keys
+      { metadata: JSON.parse(json).keys }
     end
   end
 end
