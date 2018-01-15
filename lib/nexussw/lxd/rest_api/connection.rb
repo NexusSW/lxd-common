@@ -87,7 +87,7 @@ module NexusSW
             case err['error_code']
             when 404 then raise RestAPI::Error::NotFound, err['error']
             when 400 then raise RestAPI::Error::BadRequest, err['error']
-            else raise "Error #{err['error_code']}: #{err['error']}"
+            else raise RestAPI::Error, "Error #{err['error_code']}: #{err['error']}"
             end
           end
           block_given? ? yield(response) : parse_response(response)
