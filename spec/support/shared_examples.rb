@@ -13,8 +13,7 @@ shared_examples 'it can create containers' do
   it 'creates a container' do
     # Requiring an image with lxd installed already, for 'easliy' testing nested containers
     expect(driver.create_container(name, alias: 'lts', server: 'https://cloud-images.ubuntu.com/releases', protocol: 'simplestreams', config: { 'security.privileged' => true, 'security.nesting' => true })).to eq name
-    # sleep 5 # woah up to help with some startup race conditions - intentionally punting the same issues to the consumer
-    expect(driver.container_status(name)).to eq('running') # TBD - find some way to avoid the sleep call - maybe tie into cloud init if i can convince myself to lock this test to containers that support that
+    expect(driver.container_status(name)).to eq('running')
   end
 
   it 'detects an existing container' do
