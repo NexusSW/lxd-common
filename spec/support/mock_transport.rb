@@ -10,7 +10,7 @@ module NexusSW
       class Mock < Transport
         def initialize(config = {})
           @config = config
-          @@files['mock:'] ||= {}
+          init_files_for_container 'mock:'
         end
 
         attr_reader :config
@@ -20,6 +20,10 @@ module NexusSW
         def split_container_name(filename)
           @@containers.each { |k, _| return [k, filename.sub(k, '')] if filename.start_with? k }
           [nil, filename]
+        end
+
+        def init_files_for_container(container_name)
+          (@@files[container_name] ||= {}).merge! '/etc/passwd' => "root:x:0:0:root:/root:/bin/bash\nubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash\n"
         end
 
         include Mixins::Helpers::ExecuteMixin
@@ -117,7 +121,7 @@ module NexusSW
                                           end
                 case args[2]
                 when 'push'
-                  @@files[remotehost] ||= {}
+                  init_files_for_container remotehost
                   @@files[remotehost][remotefile] = @@files[local][localfile]
                   @@files[local].each do |f, content|
                     if f.start_with?(localfile + '/') # rubocop:disable Metrics/BlockNesting
@@ -125,7 +129,7 @@ module NexusSW
                     end
                   end
                 when 'pull'
-                  @@files[local] ||= {}
+                  init_files_for_container local
                   @@files[local][localfile] = @@files[remotehost][remotefile]
                 end
               end
