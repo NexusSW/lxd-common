@@ -1,4 +1,5 @@
 require 'nexussw/lxd/transport/mixins/helpers/execute'
+require 'nexussw/lxd/transport/mixins/helpers/users'
 require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'nio/websocket'
 require 'tempfile'
@@ -22,6 +23,7 @@ module NexusSW
 
           include Helpers::ExecuteMixin
           include Helpers::UploadFolder
+          include Helpers::UsersMixin
 
           class StdinStub
             # return self as an IO (un)like object

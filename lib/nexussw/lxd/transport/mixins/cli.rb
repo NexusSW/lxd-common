@@ -1,4 +1,5 @@
 require 'nexussw/lxd/transport/mixins/local'
+require 'nexussw/lxd/transport/mixins/helpers/users'
 require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'tempfile'
 require 'pp'
@@ -18,6 +19,7 @@ module NexusSW
           attr_reader :inner_transport, :punt, :container_name, :config
 
           include Helpers::UploadFolder
+          include Helpers::UsersMixin
 
           def execute(command, options = {}, &block)
             mycommand = command.is_a?(Array) ? command.join(' ') : command
