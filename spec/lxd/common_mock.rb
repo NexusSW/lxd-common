@@ -23,6 +23,7 @@ context 'While wrapping a Mock Transport' do
     include_context 'Driver Test', :enable_nesting_tests
   end
 end
+
 describe 'Rest Driver' do
   subject(:name) { base_name }
   def base_name

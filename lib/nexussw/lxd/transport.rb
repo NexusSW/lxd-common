@@ -7,7 +7,7 @@ module NexusSW
         raise "#{self.class}#execute not implemented"
       end
 
-      def user(_user)
+      def user(_user, _options = {})
         raise "#{self.class}#user not implemented"
       end
 

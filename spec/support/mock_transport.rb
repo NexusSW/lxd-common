@@ -2,6 +2,7 @@ require 'nexussw/lxd/transport/mixins/helpers/execute'
 require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'spec_helper'
 require 'yaml'
+require 'shellwords'
 require 'pp'
 
 module NexusSW
@@ -70,7 +71,18 @@ module NexusSW
 
         def execute_chunked(command, options, &block)
           exitstatus = 0
-          args = command.is_a?(Array) ? command : command.split(' ')
+          sub_starter = ['lxc ', 'su ubuntu -c "lxc ']
+          if command.is_a?(Array)
+            args = command
+            command = command.shelljoin
+          else
+            args = command.shellsplit
+          end
+          if command.start_with?('su ubuntu -c "')
+            command = args.last
+            args = command.shellsplit
+          end
+          # pp 'top:', command, args
           begin
             case args[0]
             when 'lxc'
@@ -91,10 +103,15 @@ module NexusSW
                     active.exitstatus = 0
                   end
                 else
-                  yield('/') unless command.include? '-- lxc' # rubocop:disable Metrics/BlockNesting
-                  if command.include? '-- lxc' # rubocop:disable Metrics/BlockNesting
-                    _, subcommand = command.split(' -- ', 2)
+                  _, subcommand = command.split(' -- ', 2)
+                  recurse = false
+                  sub_starter.each { |cmd| recurse = true if subcommand.start_with? cmd } if subcommand # rubocop:disable Metrics/BlockNesting
+                  if recurse # rubocop:disable Metrics/BlockNesting
+                    subcommand = subcommand.shellsplit.last if subcommand.start_with? sub_starter.last # rubocop:disable Metrics/BlockNesting
+                    # pp 'subcommand:', subcommand
                     return execute_chunked(subcommand, options.merge(hostcontainer: args[2]), &block)
+                  else
+                    yield '/' if block_given? # rubocop:disable Metrics/BlockNesting
                   end
                 end
               when 'start'
@@ -112,7 +129,10 @@ module NexusSW
                 remotehost, remotefile =  case args[2]
                                           when 'push'
                                             idx = 3
-                                            idx += 1 if args[3] == '-r' # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx] == '-r' # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx].start_with? '--uid=' # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx].start_with? '--gid=' # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx].start_with? '--mode=' # rubocop:disable Metrics/BlockNesting
                                             localfile = args[idx]
                                             split_container_name args[idx + 1]
                                           when 'pull'

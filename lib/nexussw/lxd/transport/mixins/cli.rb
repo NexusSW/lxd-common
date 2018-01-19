@@ -2,7 +2,7 @@ require 'nexussw/lxd/transport/mixins/local'
 require 'nexussw/lxd/transport/mixins/helpers/users'
 require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'tempfile'
-require 'pp'
+require 'shellwords'
 
 module NexusSW
   module LXD
@@ -22,15 +22,14 @@ module NexusSW
           include Helpers::UsersMixin
 
           def execute(command, options = {}, &block)
-            mycommand = command.is_a?(Array) ? command.join(' ') : command
+            command = command.shelljoin if command.is_a?(Array)
+            command = runas_command(command) unless options[:subcommand]
             subcommand = options[:subcommand] || "exec #{container_name} --"
-            mycommand = "lxc #{subcommand} #{mycommand}"
-            # options = options.except :subcommand if options.key? :subcommand
-            options = options.reject { |k, _| k == :subcommand }
-            # We would have competing timeout logic depending on who the inner transport is
-            # I'll just let rest & local do the timeouts, and if inner is a chef sourced transport, they have timeout logic of their own
-            # with_timeout_and_retries(options) do
-            inner_transport.execute mycommand, options, &block
+            command = "lxc #{subcommand} #{command}"
+
+            options.reject! { |k, _| [:subcommand, :runas].include? k }
+
+            inner_transport.execute command, options, &block
           end
 
           def read_file(path)
@@ -43,10 +42,12 @@ module NexusSW
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
 
-          def write_file(path, content)
+          def write_file(path, content, options = {})
+            perms = file_perms(options)
+
             tfile = inner_mktmp
             inner_transport.write_file tfile, content
-            execute("#{tfile} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
+            execute("#{tfile} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
@@ -60,18 +61,22 @@ module NexusSW
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
 
-          def upload_file(local_path, path)
+          def upload_file(local_path, path, options = {})
+            perms = file_perms(options)
+
             tfile = inner_mktmp if punt
             localname = tfile || local_path
             inner_transport.upload_file local_path, tfile if tfile
-            execute("#{localname} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
+            execute("#{localname} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
 
-          def upload_folder(local_path, path)
+          def upload_folder(local_path, path, options = {})
             return super unless config[:info] && config[:info]['api_extensions'] && config[:info]['api_extensions'].include?('directory_manipulation')
-            execute("-r #{local_path} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
+
+            perms = file_perms(options)
+            execute("-r #{local_path} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
           end
 
           def add_remote(host_name)
@@ -102,6 +107,15 @@ module NexusSW
             "/tmp/#{File.basename tfile.path}"
           ensure
             tfile.unlink
+          end
+
+          def file_perms(options = {})
+            perms = ''
+            perms += " --uid=#{options[:uid] || uid || 0}"
+            perms += " --gid=#{options[:gid] || gid || 0}"
+            fmode = options[:file_mode] || file_mode
+            perms += " --mode=#{fmode}" if fmode
+            perms
           end
         end
       end

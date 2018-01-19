@@ -26,12 +26,14 @@ module NexusSW
               def error!
                 return self if exitstatus == 0
                 msg = "Error: '#{command}' failed with exit code #{exitstatus}.\n"
+                # msg += (" while running as '#{username}'.\n" if username) || ".\n"
                 msg += "STDOUT: #{stdout}" if stdout.is_a?(String) && !stdout.empty?
                 msg += "STDERR: #{stderr}" if stderr.is_a?(String) && !stderr.empty?
                 raise ::NexusSW::LXD::RestAPI::Error, msg
               end
             end
 
+            # LocalTransport does not have the users mixin, so code the `su` command on the rest & cli transports directly
             def execute(command, options = {}, &block)
               options ||= {}
               return execute_chunked(command, options) if options[:capture] == false && !block_given?
