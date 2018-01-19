@@ -1,8 +1,10 @@
 require 'nexussw/lxd/transport/mixins/helpers/execute'
+require 'nexussw/lxd/transport/mixins/helpers/users'
 require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'nio/websocket'
 require 'tempfile'
 require 'json'
+require 'shellwords'
 
 module NexusSW
   module LXD
@@ -22,6 +24,7 @@ module NexusSW
 
           include Helpers::ExecuteMixin
           include Helpers::UploadFolder
+          include Helpers::UsersMixin
 
           class StdinStub
             # return self as an IO (un)like object
@@ -62,6 +65,7 @@ module NexusSW
             opid = nil
             backchannel = nil
             getlogs = false
+            command = runas_command(command, options)
             if block_given? && (options[:capture] || !config[:info][:api_extensions].include?('container_exec_recording'))
               apiopts = { :'wait-for-websocket' => true, interactive: false, sync: false }
               apiopts[:interactive] = true if options[:capture] == :interactive
@@ -114,17 +118,21 @@ module NexusSW
             api.read_file container_name, path
           end
 
-          def write_file(path, content)
-            api.write_file container_name, path, content: content
+          def write_file(path, content, options = {})
+            options = options.merge content: content
+            options[:uid] ||= uid if uid
+            options[:gid] ||= gid if gid
+            options[:file_mode] ||= file_mode if file_mode
+            api.write_file container_name, path, options
           end
 
           def download_file(path, local_path)
             api.pull_file container_name, path, local_path
           end
 
-          def upload_file(local_path, path)
+          def upload_file(local_path, path, options = {})
             # return api.push_file(local_path, container_name, path)
-            write_file(path, IO.binread(local_path))
+            write_file(path, IO.binread(local_path), options)
           end
 
           protected

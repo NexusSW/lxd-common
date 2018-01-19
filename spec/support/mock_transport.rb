@@ -2,6 +2,7 @@ require 'nexussw/lxd/transport/mixins/helpers/execute'
 require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
 require 'spec_helper'
 require 'yaml'
+require 'shellwords'
 require 'pp'
 
 module NexusSW
@@ -10,7 +11,7 @@ module NexusSW
       class Mock < Transport
         def initialize(config = {})
           @config = config
-          @@files['mock:'] ||= {}
+          init_files_for_container 'mock:'
         end
 
         attr_reader :config
@@ -20,6 +21,10 @@ module NexusSW
         def split_container_name(filename)
           @@containers.each { |k, _| return [k, filename.sub(k, '')] if filename.start_with? k }
           [nil, filename]
+        end
+
+        def init_files_for_container(container_name)
+          (@@files[container_name] ||= {}).merge! '/etc/passwd' => "root:x:0:0:root:/root:/bin/bash\nubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash\n"
         end
 
         include Mixins::Helpers::ExecuteMixin
@@ -66,7 +71,15 @@ module NexusSW
 
         def execute_chunked(command, options, &block)
           exitstatus = 0
-          args = command.is_a?(Array) ? command : command.split(' ')
+          sub_starter = ['lxc ', 'su ubuntu -c lxc\ ']
+          if command.is_a?(Array)
+            args = command
+            command = command.shelljoin
+          else
+            args = command.shellsplit
+          end
+
+          # pp 'top:', command, args
           begin
             case args[0]
             when 'lxc'
@@ -87,10 +100,15 @@ module NexusSW
                     active.exitstatus = 0
                   end
                 else
-                  yield('/') unless command.include? '-- lxc' # rubocop:disable Metrics/BlockNesting
-                  if command.include? '-- lxc' # rubocop:disable Metrics/BlockNesting
-                    _, subcommand = command.split(' -- ', 2)
+                  _, subcommand = command.split(' -- ', 2)
+                  recurse = false
+                  sub_starter.each { |cmd| recurse = true if subcommand.start_with? cmd } if subcommand # rubocop:disable Metrics/BlockNesting
+                  if recurse # rubocop:disable Metrics/BlockNesting
+                    subcommand = subcommand.shellsplit.last if subcommand.start_with? sub_starter.last # rubocop:disable Metrics/BlockNesting
+                    # pp 'subcommand:', subcommand
                     return execute_chunked(subcommand, options.merge(hostcontainer: args[2]), &block)
+                  elsif block_given? # rubocop:disable Metrics/BlockNesting
+                    yield '/'
                   end
                 end
               when 'start'
@@ -108,7 +126,10 @@ module NexusSW
                 remotehost, remotefile =  case args[2]
                                           when 'push'
                                             idx = 3
-                                            idx += 1 if args[3] == '-r' # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx] == '-r' # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx].start_with? '--uid=' # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx].start_with? '--gid=' # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx].start_with? '--mode=' # rubocop:disable Metrics/BlockNesting
                                             localfile = args[idx]
                                             split_container_name args[idx + 1]
                                           when 'pull'
@@ -117,7 +138,7 @@ module NexusSW
                                           end
                 case args[2]
                 when 'push'
-                  @@files[remotehost] ||= {}
+                  init_files_for_container remotehost
                   @@files[remotehost][remotefile] = @@files[local][localfile]
                   @@files[local].each do |f, content|
                     if f.start_with?(localfile + '/') # rubocop:disable Metrics/BlockNesting
@@ -125,7 +146,7 @@ module NexusSW
                     end
                   end
                 when 'pull'
-                  @@files[local] ||= {}
+                  init_files_for_container local
                   @@files[local][localfile] = @@files[remotehost][remotefile]
                 end
               end

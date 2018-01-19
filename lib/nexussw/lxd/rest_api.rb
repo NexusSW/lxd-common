@@ -54,12 +54,17 @@ module NexusSW
       end
 
       def write_file(container_name, path, options)
-        post "/1.0/containers/#{container_name}/files?path=#{path}", options[:content]
+        post "/1.0/containers/#{container_name}/files?path=#{path}", options[:content] do |req|
+          req.headers['Content-Type'] = 'application/octet-stream'
+          req.headers['X-LXD-uid'] = options[:uid] if options[:uid]
+          req.headers['X-LXD-gid'] = options[:gid] if options[:gid]
+          req.headers['X-LXD-mode'] = options[:file_mode] if options[:file_mode]
+        end
       end
 
-      def push_file(local_path, container_name, remote_path)
-        write_file container_name, remote_path, content: IO.binread(local_path)
-      end
+      # def push_file(local_path, container_name, remote_path)
+      #   write_file container_name, remote_path, content: IO.binread(local_path)
+      # end
 
       def pull_file(container_name, remote_path, local_path)
         IO.binwrite(local_path, read_file(container_name, remote_path))

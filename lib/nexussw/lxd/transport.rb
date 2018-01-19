@@ -7,11 +7,15 @@ module NexusSW
         raise "#{self.class}#execute not implemented"
       end
 
+      def user(_user, _options = {})
+        raise "#{self.class}#user not implemented"
+      end
+
       def read_file(_path)
         raise "#{self.class}#read_file not implemented"
       end
 
-      def write_file(_path, _content)
+      def write_file(_path, _content, _options = {})
         raise "#{self.class}#write_file not implemented"
       end
 
@@ -19,11 +23,11 @@ module NexusSW
         raise "#{self.class}#download_file not implemented"
       end
 
-      def upload_file(_local_path, _path)
+      def upload_file(_local_path, _path, _options = {})
         raise "#{self.class}#upload_file not implemented"
       end
 
-      def upload_folder(_local_path, _path)
+      def upload_folder(_local_path, _path, _options = {})
         raise "#{self.class}#upload_folder not implemented"
       end
     end

@@ -2,6 +2,7 @@ require 'support/mock_transport'
 require 'securerandom'
 require 'yaml'
 require 'tempfile'
+require 'shellwords'
 
 class NexusSW::LXD::RestAPI
   class Mock
@@ -63,6 +64,7 @@ class NexusSW::LXD::RestAPI
     end
 
     def execute_command(container_name, command, options)
+      command = command.shelljoin if command.is_a? Array
       res = mock.execute "lxc exec #{container_name} -- #{command}"
       # retval[:metadata][:fds][:'1']
       metadata = {
