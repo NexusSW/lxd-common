@@ -71,17 +71,14 @@ module NexusSW
 
         def execute_chunked(command, options, &block)
           exitstatus = 0
-          sub_starter = ['lxc ', 'su ubuntu -c "lxc ']
+          sub_starter = ['lxc ', 'su ubuntu -c lxc\ ']
           if command.is_a?(Array)
             args = command
             command = command.shelljoin
           else
             args = command.shellsplit
           end
-          if command.start_with?('su ubuntu -c "')
-            command = args.last
-            args = command.shellsplit
-          end
+
           # pp 'top:', command, args
           begin
             case args[0]
@@ -110,8 +107,8 @@ module NexusSW
                     subcommand = subcommand.shellsplit.last if subcommand.start_with? sub_starter.last # rubocop:disable Metrics/BlockNesting
                     # pp 'subcommand:', subcommand
                     return execute_chunked(subcommand, options.merge(hostcontainer: args[2]), &block)
-                  else
-                    yield '/' if block_given? # rubocop:disable Metrics/BlockNesting
+                  elsif block_given? # rubocop:disable Metrics/BlockNesting
+                    yield '/'
                   end
                 end
               when 'start'

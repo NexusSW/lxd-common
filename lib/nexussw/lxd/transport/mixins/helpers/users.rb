@@ -1,3 +1,5 @@
+require 'shellwords'
+
 module NexusSW
   module LXD
     class Transport
@@ -24,7 +26,8 @@ module NexusSW
             def runas_command(command, options = {})
               uname = options[:runas] || username
               return command unless uname
-              "su #{uname} -c \"#{command.gsub('"', '\"')}\""
+              command = command.shelljoin if command.is_a? Array
+              ['su', uname, '-c', command]
             end
           end
         end

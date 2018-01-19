@@ -22,8 +22,8 @@ module NexusSW
           include Helpers::UsersMixin
 
           def execute(command, options = {}, &block)
+            command = runas_command(command, options) unless options[:subcommand]
             command = command.shelljoin if command.is_a?(Array)
-            command = runas_command(command) unless options[:subcommand]
             subcommand = options[:subcommand] || "exec #{container_name} --"
             command = "lxc #{subcommand} #{command}"
 
