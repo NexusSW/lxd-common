@@ -143,9 +143,11 @@ module NexusSW
               @callback = block if block_given?
               waitlist[:control] = NIO::WebSocket.connect(baseurl + endpoints[:control], ws_options) do |driver|
                 driver.on :io_error do # usually I get an EOF
+                  @closed = true
                   waitlist.each { |_, v| v.close if v.respond_to? :close }
                 end
                 driver.on :close do # but on occasion I get a legit close
+                  @closed = true
                   waitlist.each { |_, v| v.close if v.respond_to? :close }
                 end
               end
@@ -167,10 +169,15 @@ module NexusSW
                   callback.call data
                 end
               end
+              @closed = false
             end
 
             attr_reader :waitlist
             attr_accessor :callback
+
+            def alive?
+              !@closed
+            end
 
             def exit
               waitlist.each do |_fd, driver|
