@@ -92,9 +92,7 @@ module NexusSW
       end
 
       def wait_for_operation(operation_id)
-        get "/1.0/operations/#{operation_id}/wait" do |response|
-          LXD.symbolize_keys(JSON.parse(response.body))
-        end
+        get "/1.0/operations/#{operation_id}/wait"
       end
 
       private

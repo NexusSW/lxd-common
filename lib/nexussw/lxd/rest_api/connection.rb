@@ -35,8 +35,8 @@ module NexusSW
             url: baseurl,
             ssl: {
               verify: verify_ssl,
-              client_cert: OpenSSL::X509::Certificate.new(cert),
-              client_key: OpenSSL::PKey::RSA.new(key),
+              client_cert: client_cert,
+              client_key: client_key,
             },
           }
 
@@ -51,12 +51,12 @@ module NexusSW
           api_options[:ssl] || {}
         end
 
-        def cert
-          File.read(ssl_opts[:client_cert] || "#{ENV['HOME']}/.config/lxc/client.crt")
+        def client_cert
+          @client_cert ||= OpenSSL::X509::Certificate.new(File.read(ssl_opts[:client_cert] || "#{ENV['HOME']}/.config/lxc/client.crt"))
         end
 
-        def key
-          File.read(ssl_opts[:client_key] || "#{ENV['HOME']}/.config/lxc/client.key")
+        def client_key
+          @client_key ||= OpenSSL::PKey::RSA.new(File.read(ssl_opts[:client_key] || "#{ENV['HOME']}/.config/lxc/client.key"))
         end
 
         def verify_ssl
@@ -69,6 +69,7 @@ module NexusSW
         end
 
         def send_request(verb, relative_url, content = nil)
+          fileop = false
           response = connection.send(verb) do |req|
             req.url relative_url
             if content.is_a? Hash
@@ -77,6 +78,7 @@ module NexusSW
             elsif content # Only upon file upload at this time
               yield req if block_given?
               req.body = content.to_s
+              fileop = true
             end
           end
           if response.status >= 400
@@ -87,7 +89,7 @@ module NexusSW
             else raise RestAPI::Error, "Error #{err['error_code']}: #{err['error']}"
             end
           end
-          block_given? ? yield(response) : parse_response(response)
+          block_given? && !fileop ? yield(response) : parse_response(response)
         end
       end
     end
