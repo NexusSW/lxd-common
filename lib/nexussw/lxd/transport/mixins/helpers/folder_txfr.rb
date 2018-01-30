@@ -3,7 +3,7 @@ module NexusSW
     class Transport
       module Mixins
         module Helpers
-          module UploadFolder
+          module FolderTxfr
             def upload_folder(local_path, path, options = {})
               upload_using_tarball(local_path, path, options) || upload_files_individually(local_path, path, options)
             end

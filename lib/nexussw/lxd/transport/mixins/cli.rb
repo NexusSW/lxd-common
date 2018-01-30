@@ -1,6 +1,6 @@
 require 'nexussw/lxd/transport/mixins/local'
 require 'nexussw/lxd/transport/mixins/helpers/users'
-require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
+require 'nexussw/lxd/transport/mixins/helpers/folder_txfr'
 require 'tempfile'
 require 'shellwords'
 
@@ -18,7 +18,7 @@ module NexusSW
 
           attr_reader :inner_transport, :punt, :container_name, :config
 
-          include Helpers::UploadFolder
+          include Helpers::FolderTxfr
           include Helpers::UsersMixin
 
           def execute(command, options = {}, &block)
