@@ -11,12 +11,34 @@ module NexusSW
               upload_using_tarball(local_path, path, options) || upload_files_individually(local_path, path, options)
             end
 
+            def download_folder(path, local_path)
+              download_using_tarball(path, local_path) || download_files_individually(path, local_path)
+            end
+
             def upload_files_individually(local_path, path, options = {})
+              dest = File.join(path, File.basename(local_path))
+              execute 'mkdir -p ' + dest, capture: false # for parity with tarball extract
               Dir.entries(local_path).map { |f| (f == '.' || f == '..') ? nil : File.join(local_path, f) }.compact.each do |f|
-                dest = File.join(path, File.basename(local_path))
                 upload_files_individually f, dest, options if File.directory? f
                 upload_file f, File.join(dest, File.basename(f)), options if File.file? f
               end
+            end
+
+            def download_files_individually(path, local_path)
+              dest = File.join(local_path, File.basename(path))
+              execute("bash -c 'cd #{path} && find -type d'").error!.stdout.each_line do |line|
+                newdir = line.strip.sub(/^\./, dest)
+                Dir.mkdir newdir unless Dir.exist? newdir
+              end
+              execute("bash -c 'cd #{path} && find ! -type d'").error!.stdout.each_line do |line|
+                download_file line.strip.sub(/^\./, path), line.strip.sub(/^\./, dest)
+              end
+            end
+
+            # gzip(-z) or bzip2(-j) (these are the only 2 on trusty atm)
+            def download_using_tarball(path, local_path)
+              return false # unless can_archive?
+              raise 'ENOIMPL tarball'
             end
 
             def upload_using_tarball(local_path, path, options = {})
@@ -52,23 +74,9 @@ module NexusSW
                                   return false if respond_to?(:inner_transport) && inner_transport.respond_to?(:mock)
                                   return false if respond_to?(:inner_transport) && inner_transport.respond_to?(:inner_transport) && inner_transport.inner_transport.respond_to?(:mock)
                                   return false if respond_to?(:inner_transport) && inner_transport.respond_to?(:api) && inner_transport.api.respond_to?(:mock)
-                                  `tar --version`
                                   true
                                 rescue
                                   false
-                                end
-            end
-
-            # gzip(-z) or bzip2(-j) (these are the only 2 on trusty atm)
-            def compression
-              @compression ||= begin
-                                  which = execute('bash -c "which gzip || which bzip2 || true"').stdout.strip
-                                  which = File.basename(which) if which
-                                  case which
-                                  when 'gzip' then ['z', '.gz']
-                                  when 'bzip2' then ['j', '.bzip2']
-                                  else ['', '']
-                                  end
                                 end
             end
           end

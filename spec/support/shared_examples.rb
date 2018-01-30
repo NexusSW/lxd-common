@@ -70,9 +70,9 @@ shared_examples 'Transport Functions' do
   end
 
   it 'can download a folder' do
-    localname = File.join(ENV['TEMP'], 'spec')
+    localname = File.join(Dir.tmpdir, 'spec')
     expect { transport.download_folder('/root/spec', File.dirname(localname)) }.not_to raise_error
-    expect(File.read("#{localname}/support/shared_contexts.rb")).to eq(File.read('spec/support/shared_contexts.rb'))
+    expect(File.read(File.join(localname, 'support/shared_contexts.rb'))).to eq(File.read('spec/support/shared_contexts.rb'))
   end
 
   tfile = Tempfile.new 'lxd-rspec-tests'

@@ -79,6 +79,12 @@ module NexusSW
             execute("-r #{local_path} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
           end
 
+          def download_folder(path, local_path)
+            return super unless config[:info] && config[:info]['api_extensions'] && config[:info]['api_extensions'].include?('directory_manipulation')
+
+            execute("-r #{container_name}#{path} #{local_path}", subcommand: 'file pull', capture: false).error!
+          end
+
           def add_remote(host_name)
             execute("add #{host_name} --accept-certificate", subcommand: 'remote').error! unless remote? host_name
           end
