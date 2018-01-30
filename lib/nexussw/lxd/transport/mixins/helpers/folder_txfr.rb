@@ -1,3 +1,6 @@
+require 'zlib'
+require 'archive/tar/minitar'
+
 module NexusSW
   module LXD
     class Transport
@@ -18,24 +21,16 @@ module NexusSW
 
             def upload_using_tarball(local_path, path, options = {})
               return false unless can_archive?
-              # TODO: should I return false upon error?  i.e. retry with individual file uploads if this fails?
-              #   lets see how this does in the wild before deciding
-              flag, ext = compression
               begin
                 tfile = Tempfile.new(container_name)
                 tfile.close
-                `tar -c#{flag}f #{tfile.path} -C #{File.dirname local_path} ./#{File.basename local_path}`
-                # on that above note we'll do this at least
-                # raise "Unable to create archive #{tfile.path}" if File.zero? tfile.path
-                if File.zero? tfile.path
-                  @can_archive = false
-                  return false
+                Dir.chdir File.dirname(local_path) do
+                  Archive::Tar::Minitar.pack File.basename(local_path), Zlib::GzipWriter.new(File.open(tfile.path, 'wb'))
                 end
-                fname = '/tmp/' + File.basename(tfile.path) + ".tar#{ext}"
+                # `tar -c#{flag}f #{tfile.path} -C #{File.dirname local_path} ./#{File.basename local_path}`
+                fname = '/tmp/' + File.basename(tfile.path) + '.tgz'
                 upload_file tfile.path, fname, options
-                # TODO: serious: make sure the tar extract does an overwrite of existing files
-                #   multiple converge support as well as CI cycle/dev updated files get updated instead of .1 suffixed (?)
-                #   I think I need a flag (it's been a while)
+
                 myuid = options[:uid] || uid || (0 if is_a?(Mixins::CLI))
                 mygid = options[:gid] || gid || (0 if is_a?(Mixins::CLI))
                 mymode = options[:file_mode] || file_mode
