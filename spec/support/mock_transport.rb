@@ -1,5 +1,5 @@
 require 'nexussw/lxd/transport/mixins/helpers/execute'
-require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
+require 'nexussw/lxd/transport/mixins/helpers/folder_txfr'
 require 'spec_helper'
 require 'yaml'
 require 'shellwords'
@@ -28,7 +28,7 @@ module NexusSW
         end
 
         include Mixins::Helpers::ExecuteMixin
-        include Mixins::Helpers::UploadFolder
+        include Mixins::Helpers::FolderTxfr
 
         def running_container_state
           {
