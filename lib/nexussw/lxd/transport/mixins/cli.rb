@@ -55,7 +55,7 @@ module NexusSW
           def download_file(path, local_path)
             tfile = Transport.remote_tempname(container_name) if punt
             localname = tfile || local_path
-            execute("#{container_name}#{path} #{localname}", subcommand: 'file pull', capture: false).error!
+            execute("#{container_name}#{path} #{localname}", subcommand: 'file pull').error!
             inner_transport.download_file tfile, local_path if tfile
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
@@ -67,7 +67,7 @@ module NexusSW
             tfile = Transport.remote_tempname(container_name) if punt
             localname = tfile || local_path
             inner_transport.upload_file local_path, tfile if tfile
-            execute("#{localname} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
+            execute("#{localname} #{container_name}#{path}", subcommand: "file push#{perms}").error!
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
