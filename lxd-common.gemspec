@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'faraday', '~> 0.13'
   spec.add_dependency 'nio4r-websocket', '~> 0.6'
-  spec.add_dependency 'minitar', '~> 0.5'
+  spec.add_dependency 'minitar', '~> 0.5.4'
 
   spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'rake'
