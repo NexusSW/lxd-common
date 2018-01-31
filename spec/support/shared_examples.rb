@@ -72,7 +72,7 @@ shared_examples 'Transport Functions' do
 
   it 'can download a folder' do
     begin
-      localname = File.join(ENV['TEMP'], 'spec')
+      localname = File.join(::NexusSW::LXD::Transport.local_tempdir, 'spec')
       expect { transport.download_folder('/root/spec', File.dirname(localname)) }.not_to raise_error
       expect(File.read(File.join(localname, 'support/shared_contexts.rb'))).to eq(File.read('spec/support/shared_contexts.rb'))
     ensure

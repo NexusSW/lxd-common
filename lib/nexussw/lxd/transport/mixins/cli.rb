@@ -33,7 +33,7 @@ module NexusSW
           end
 
           def read_file(path)
-            tfile = Transport.tempname(container_name)
+            tfile = Transport.remote_tempname(container_name)
             retval = execute("#{@container_name}#{path} #{tfile}", subcommand: 'file pull', capture: false)
             # return '' if retval.exitstatus == 1
             retval.error!
@@ -45,7 +45,7 @@ module NexusSW
           def write_file(path, content, options = {})
             perms = file_perms(options)
 
-            tfile = Transport.tempname(container_name)
+            tfile = Transport.remote_tempname(container_name)
             inner_transport.write_file tfile, content
             execute("#{tfile} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
           ensure
@@ -53,7 +53,7 @@ module NexusSW
           end
 
           def download_file(path, local_path)
-            tfile = Transport.tempname(container_name) if punt
+            tfile = Transport.remote_tempname(container_name) if punt
             localname = tfile || local_path
             execute("#{container_name}#{path} #{localname}", subcommand: 'file pull', capture: false).error!
             inner_transport.download_file tfile, local_path if tfile
@@ -64,7 +64,7 @@ module NexusSW
           def upload_file(local_path, path, options = {})
             perms = file_perms(options)
 
-            tfile = Transport.tempname(container_name) if punt
+            tfile = Transport.remote_tempname(container_name) if punt
             localname = tfile || local_path
             inner_transport.upload_file local_path, tfile if tfile
             execute("#{localname} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!

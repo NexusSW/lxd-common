@@ -37,11 +37,15 @@ module NexusSW
       end
 
       # kludge for windows environment
-      def self.tempname(basename)
+      def self.remote_tempname(basename)
         tfile = Tempfile.new(basename)
         "/tmp/#{File.basename tfile.path}"
       ensure
         tfile.unlink
+      end
+
+      def self.local_tempdir
+        Gem.win_platform? ? ENV['TEMP'] : '/tmp'
       end
     end
   end
