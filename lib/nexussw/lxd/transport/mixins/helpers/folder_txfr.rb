@@ -17,7 +17,7 @@ module NexusSW
 
             def upload_files_individually(local_path, path, options = {})
               dest = File.join(path, File.basename(local_path))
-              execute 'mkdir -p ' + dest, capture: false # for parity with tarball extract
+              execute('mkdir -p ' + dest).error! # for parity with tarball extract
               Dir.entries(local_path).map { |f| (f == '.' || f == '..') ? nil : File.join(local_path, f) }.compact.each do |f|
                 upload_files_individually f, dest, options if File.directory? f
                 upload_file f, File.join(dest, File.basename(f)), options if File.file? f
@@ -44,13 +44,7 @@ module NexusSW
 
               download_file tfile, tarball_name
 
-              # if Gem.win_platform?
               Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, 'rb')), local_path
-              # else
-              #   Dir.chdir File.dirname(local_path) do
-              #     `tar xvf #{tarball_name}`
-              #   end
-              # end
             ensure
               if tarball_name
                 File.delete tarball_name if File.exist? tarball_name
