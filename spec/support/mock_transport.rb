@@ -1,5 +1,5 @@
 require 'nexussw/lxd/transport/mixins/helpers/execute'
-require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
+require 'nexussw/lxd/transport/mixins/helpers/folder_txfr'
 require 'spec_helper'
 require 'yaml'
 require 'shellwords'
@@ -28,7 +28,7 @@ module NexusSW
         end
 
         include Mixins::Helpers::ExecuteMixin
-        include Mixins::Helpers::UploadFolder
+        include Mixins::Helpers::FolderTxfr
 
         def running_container_state
           {
@@ -108,7 +108,13 @@ module NexusSW
                     # pp 'subcommand:', subcommand
                     return execute_chunked(subcommand, options.merge(hostcontainer: args[2]), &block)
                   elsif block_given? # rubocop:disable Metrics/BlockNesting
-                    yield '/'
+                    if command[/find -type d/] # rubocop:disable Metrics/BlockNesting
+                      yield ".\n./support\n"
+                    elsif command[/find ! -type d/] # rubocop:disable Metrics/BlockNesting
+                      yield "./support/shared_contexts.rb\n"
+                    else
+                      yield '/'
+                    end
                   end
                 end
               when 'start'

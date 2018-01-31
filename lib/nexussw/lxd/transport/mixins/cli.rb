@@ -1,6 +1,6 @@
 require 'nexussw/lxd/transport/mixins/local'
 require 'nexussw/lxd/transport/mixins/helpers/users'
-require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
+require 'nexussw/lxd/transport/mixins/helpers/folder_txfr'
 require 'tempfile'
 require 'shellwords'
 
@@ -18,7 +18,7 @@ module NexusSW
 
           attr_reader :inner_transport, :punt, :container_name, :config
 
-          include Helpers::UploadFolder
+          include Helpers::FolderTxfr
           include Helpers::UsersMixin
 
           def execute(command, options = {}, &block)
@@ -33,7 +33,7 @@ module NexusSW
           end
 
           def read_file(path)
-            tfile = inner_mktmp
+            tfile = Transport.remote_tempname(container_name)
             retval = execute("#{@container_name}#{path} #{tfile}", subcommand: 'file pull', capture: false)
             # return '' if retval.exitstatus == 1
             retval.error!
@@ -45,7 +45,7 @@ module NexusSW
           def write_file(path, content, options = {})
             perms = file_perms(options)
 
-            tfile = inner_mktmp
+            tfile = Transport.remote_tempname(container_name)
             inner_transport.write_file tfile, content
             execute("#{tfile} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
           ensure
@@ -53,9 +53,9 @@ module NexusSW
           end
 
           def download_file(path, local_path)
-            tfile = inner_mktmp if punt
+            tfile = Transport.remote_tempname(container_name) if punt
             localname = tfile || local_path
-            execute("#{container_name}#{path} #{localname}", subcommand: 'file pull', capture: false).error!
+            execute("#{container_name}#{path} #{localname}", subcommand: 'file pull').error!
             inner_transport.download_file tfile, local_path if tfile
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
@@ -64,10 +64,10 @@ module NexusSW
           def upload_file(local_path, path, options = {})
             perms = file_perms(options)
 
-            tfile = inner_mktmp if punt
+            tfile = Transport.remote_tempname(container_name) if punt
             localname = tfile || local_path
             inner_transport.upload_file local_path, tfile if tfile
-            execute("#{localname} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
+            execute("#{localname} #{container_name}#{path}", subcommand: "file push#{perms}").error!
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
@@ -77,6 +77,12 @@ module NexusSW
 
             perms = file_perms(options)
             execute("-r #{local_path} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
+          end
+
+          def download_folder(path, local_path)
+            return super unless config[:info] && config[:info]['api_extensions'] && config[:info]['api_extensions'].include?('directory_manipulation')
+
+            execute("-r #{container_name}#{path} #{local_path}", subcommand: 'file pull', capture: false).error!
           end
 
           def add_remote(host_name)
@@ -100,14 +106,6 @@ module NexusSW
           end
 
           private
-
-          # kludge for windows environment
-          def inner_mktmp
-            tfile = Tempfile.new(container_name)
-            "/tmp/#{File.basename tfile.path}"
-          ensure
-            tfile.unlink
-          end
 
           def file_perms(options = {})
             perms = ''

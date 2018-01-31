@@ -1,6 +1,6 @@
 require 'nexussw/lxd/transport/mixins/helpers/execute'
 require 'nexussw/lxd/transport/mixins/helpers/users'
-require 'nexussw/lxd/transport/mixins/helpers/upload_folder'
+require 'nexussw/lxd/transport/mixins/helpers/folder_txfr'
 require 'nio/websocket'
 require 'tempfile'
 require 'json'
@@ -23,7 +23,7 @@ module NexusSW
           attr_reader :api, :rest_endpoint, :container_name, :config
 
           include Helpers::ExecuteMixin
-          include Helpers::UploadFolder
+          include Helpers::FolderTxfr
           include Helpers::UsersMixin
 
           class StdinStub

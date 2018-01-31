@@ -18,6 +18,7 @@ before_script:
 - "./cc-test-reporter before-build"
 script:
 - rake mock
+- mktemp
 - sudo su -l $USER -c "cd $(pwd) && rvm use ${RUBY_VERSION/ruby-/} && rake spec"
 after_script:
 - cat Gemfile.lock
