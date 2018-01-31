@@ -1,4 +1,5 @@
 require 'tempfile'
+require 'fileutils'
 
 shared_examples 'it can create containers' do
   it 'detects a missing container' do
@@ -70,9 +71,13 @@ shared_examples 'Transport Functions' do
   end
 
   it 'can download a folder' do
-    localname = File.join(Dir.tmpdir, 'spec')
-    expect { transport.download_folder('/root/spec', File.dirname(localname)) }.not_to raise_error
-    expect(File.read(File.join(localname, 'support/shared_contexts.rb'))).to eq(File.read('spec/support/shared_contexts.rb'))
+    begin
+      localname = File.join(Dir.tmpdir, 'spec')
+      expect { transport.download_folder('/root/spec', File.dirname(localname)) }.not_to raise_error
+      expect(File.read(File.join(localname, 'support/shared_contexts.rb'))).to eq(File.read('spec/support/shared_contexts.rb'))
+    ensure
+      FileUtils.rm_rf localname, secure: true
+    end
   end
 
   tfile = Tempfile.new 'lxd-rspec-tests'

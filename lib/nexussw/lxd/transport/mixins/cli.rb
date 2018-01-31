@@ -33,7 +33,7 @@ module NexusSW
           end
 
           def read_file(path)
-            tfile = inner_mktmp
+            tfile = Transport.tempname(container_name)
             retval = execute("#{@container_name}#{path} #{tfile}", subcommand: 'file pull', capture: false)
             # return '' if retval.exitstatus == 1
             retval.error!
@@ -45,7 +45,7 @@ module NexusSW
           def write_file(path, content, options = {})
             perms = file_perms(options)
 
-            tfile = inner_mktmp
+            tfile = Transport.tempname(container_name)
             inner_transport.write_file tfile, content
             execute("#{tfile} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
           ensure
@@ -53,7 +53,7 @@ module NexusSW
           end
 
           def download_file(path, local_path)
-            tfile = inner_mktmp if punt
+            tfile = Transport.tempname(container_name) if punt
             localname = tfile || local_path
             execute("#{container_name}#{path} #{localname}", subcommand: 'file pull', capture: false).error!
             inner_transport.download_file tfile, local_path if tfile
@@ -64,7 +64,7 @@ module NexusSW
           def upload_file(local_path, path, options = {})
             perms = file_perms(options)
 
-            tfile = inner_mktmp if punt
+            tfile = Transport.tempname(container_name) if punt
             localname = tfile || local_path
             inner_transport.upload_file local_path, tfile if tfile
             execute("#{localname} #{container_name}#{path}", subcommand: "file push#{perms}", capture: false).error!
@@ -106,14 +106,6 @@ module NexusSW
           end
 
           private
-
-          # kludge for windows environment
-          def inner_mktmp
-            tfile = Tempfile.new(container_name)
-            "/tmp/#{File.basename tfile.path}"
-          ensure
-            tfile.unlink
-          end
 
           def file_perms(options = {})
             perms = ''

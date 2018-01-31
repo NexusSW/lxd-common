@@ -37,8 +37,21 @@ module NexusSW
 
             # gzip(-z) or bzip2(-j) (these are the only 2 on trusty atm)
             def download_using_tarball(path, local_path)
-              return false # unless can_archive?
-              raise 'ENOIMPL tarball'
+              return false unless can_archive?
+              tfile = Transport.tempname(container_name)
+              tarball_name = File.join Dir.tmpdir, File.basename(tfile) + '.tgz'
+              execute("tar -czf #{tfile} -C #{File.dirname path} ./#{File.basename path}").error!
+
+              download_file tfile, tarball_name
+
+              Dir.chdir File.dirname(local_path) do
+                Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, 'rb')), '.'
+              end
+            ensure
+              if tarball_name
+                File.delete tarball_name if File.exist? tarball_name
+                execute "rm -rf #{tfile}"
+              end
             end
 
             def upload_using_tarball(local_path, path, options = {})

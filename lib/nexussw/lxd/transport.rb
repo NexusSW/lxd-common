@@ -1,4 +1,5 @@
 require 'nexussw/lxd'
+require 'tempfile'
 
 module NexusSW
   module LXD
@@ -33,6 +34,14 @@ module NexusSW
 
       def upload_folder(_local_path, _path, _options = {})
         raise "#{self.class}#upload_folder not implemented"
+      end
+
+      # kludge for windows environment
+      def self.tempname(basename)
+        tfile = Tempfile.new(basename)
+        "/tmp/#{File.basename tfile.path}"
+      ensure
+        tfile.unlink
       end
     end
   end
