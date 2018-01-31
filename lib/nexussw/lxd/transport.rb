@@ -45,7 +45,10 @@ module NexusSW
       end
 
       def self.local_tempdir
-        ENV['TEMP'] || ENV['TMP'] || ENV['TMPDIR'] || '/tmp'
+        return ENV['TEMP'] unless ENV['TEMP'].empty?
+        return ENV['TMP'] unless ENV['TMP'].empty?
+        return ENV['TMPDIR'] unless ENV['TMPDIR'].empty?
+        '/tmp'
       end
     end
   end
