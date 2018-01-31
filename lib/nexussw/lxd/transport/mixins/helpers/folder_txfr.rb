@@ -40,13 +40,11 @@ module NexusSW
               return false unless can_archive?
               tfile = Transport.remote_tempname(container_name)
               tarball_name = File.join Transport.local_tempdir, File.basename(tfile) + '.tgz'
-              execute("tar -czf #{tfile} -C #{File.dirname path} ./#{File.basename path}").error!
+              execute("tar -czf #{tfile} -C #{File.dirname path} #{File.basename path}").error!
 
               download_file tfile, tarball_name
 
-              Dir.chdir File.dirname(local_path) do
-                Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, 'rb')), '.'
-              end
+              Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, 'rb')), File.dirname(local_path)
             ensure
               if tarball_name
                 File.delete tarball_name if File.exist? tarball_name
