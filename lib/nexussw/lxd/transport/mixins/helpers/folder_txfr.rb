@@ -44,7 +44,13 @@ module NexusSW
 
               download_file tfile, tarball_name
 
-              Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, 'rb')), File.dirname(local_path)
+              # if Gem.win_platform?
+              Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, 'rb')), local_path
+              # else
+              #   Dir.chdir File.dirname(local_path) do
+              #     `tar xvf #{tarball_name}`
+              #   end
+              # end
             ensure
               if tarball_name
                 File.delete tarball_name if File.exist? tarball_name
