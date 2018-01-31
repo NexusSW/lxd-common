@@ -45,7 +45,7 @@ module NexusSW
       end
 
       def self.local_tempdir
-        Gem.win_platform? ? ENV['TEMP'] : '/tmp'
+        ENV['TEMP'] || ENV['TMP'] || ENV['TMPDIR'] || '/tmp'
       end
     end
   end
