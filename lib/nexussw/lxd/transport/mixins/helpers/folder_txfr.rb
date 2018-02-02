@@ -38,7 +38,8 @@ module NexusSW
             # gzip(-z) or bzip2(-j) (these are the only 2 on trusty atm)
             def download_using_tarball(path, local_path, options = {})
               if options[:auto_detect] && execute("test -d #{path}").error?
-                return download_file(path, local_path)
+                download_file(path, File.join(local_path, File.basename(path)))
+                return true
               end
 
               return false unless can_archive?
@@ -49,6 +50,7 @@ module NexusSW
               download_file tfile, tarball_name
 
               Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, 'rb')), local_path
+              return true
             ensure
               if tarball_name
                 File.delete tarball_name if File.exist? tarball_name
