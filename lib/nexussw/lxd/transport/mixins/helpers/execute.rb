@@ -31,6 +31,10 @@ module NexusSW
                 msg += "STDERR: #{stderr}" if stderr.is_a?(String) && !stderr.empty?
                 raise ::NexusSW::LXD::RestAPI::Error, msg
               end
+
+              def error?
+                exitstatus != 0
+              end
             end
 
             # LocalTransport does not have the users mixin, so code the `su` command on the rest & cli transports directly
