@@ -24,7 +24,7 @@ module NexusSW
         raise "#{self.class}#download_file not implemented"
       end
 
-      def download_folder(_path, _local_path)
+      def download_folder(_path, _local_path, _options = {})
         raise "#{self.class}#download_folder not implemented"
       end
 

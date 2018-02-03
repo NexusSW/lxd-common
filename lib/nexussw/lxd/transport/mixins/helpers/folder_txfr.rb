@@ -11,8 +11,8 @@ module NexusSW
               upload_using_tarball(local_path, path, options) || upload_files_individually(local_path, path, options)
             end
 
-            def download_folder(path, local_path)
-              download_using_tarball(path, local_path) || download_files_individually(path, local_path)
+            def download_folder(path, local_path, options = {})
+              download_using_tarball(path, local_path, options) || download_files_individually(path, local_path)
             end
 
             def upload_files_individually(local_path, path, options = {})
@@ -36,7 +36,12 @@ module NexusSW
             end
 
             # gzip(-z) or bzip2(-j) (these are the only 2 on trusty atm)
-            def download_using_tarball(path, local_path)
+            def download_using_tarball(path, local_path, options = {})
+              if options[:auto_detect] && execute("test -d #{path}").error?
+                download_file(path, File.join(local_path, File.basename(path)))
+                return true
+              end
+
               return false unless can_archive?
               tfile = Transport.remote_tempname(container_name)
               tarball_name = File.join Transport.local_tempdir, File.basename(tfile) + '.tgz'
@@ -45,6 +50,7 @@ module NexusSW
               download_file tfile, tarball_name
 
               Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, 'rb')), local_path
+              return true
             ensure
               if tarball_name
                 File.delete tarball_name if File.exist? tarball_name
