@@ -21,6 +21,10 @@ module NexusSW
             attr_accessor :file_mode, :gid
             attr_reader :uid, :username
 
+            def reset_user
+              @username = @uid = @gid = nil
+            end
+
             private
 
             def runas_command(command, options = {})

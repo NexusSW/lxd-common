@@ -70,12 +70,7 @@ module NexusSW
                 fname = '/tmp/' + File.basename(tfile.path) + '.tgz'
                 upload_file tfile.path, fname, options
 
-                myuid = options[:uid] || uid || (0 if is_a?(Mixins::CLI))
-                mygid = options[:gid] || gid || (0 if is_a?(Mixins::CLI))
-                mymode = options[:file_mode] || file_mode
-                chown = " && chown -R #{myuid}:#{mygid} #{File.basename(local_path)}" if myuid
-                chmod = " && chmod -R #{mymode} #{File.basename(local_path)}" if mymode
-                execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xf #{fname} && rm -rf #{fname}#{chmod}#{chown}'").error!
+                execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xf #{fname} && rm -rf #{fname}'").error!
               ensure
                 tfile.unlink
               end
