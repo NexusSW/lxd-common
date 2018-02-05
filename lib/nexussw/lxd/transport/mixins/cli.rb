@@ -24,10 +24,14 @@ module NexusSW
           def execute(command, options = {}, &block)
             command = runas_command(command, options) unless options[:subcommand]
             command = command.shelljoin if command.is_a?(Array)
-            subcommand = options[:subcommand] || "exec #{container_name} --"
+            subcommand = options[:subcommand]
+            unless subcommand
+              subcommand = "exec #{container_name} --"
+              command = ['bash', '-c', command].shelljoin
+            end
             command = "lxc #{subcommand} #{command}"
 
-            options.reject! { |k, _| [:subcommand, :runas].include? k }
+            options = options.reject { |k, _| [:subcommand, :runas].include? k }
 
             inner_transport.execute command, options, &block
           end

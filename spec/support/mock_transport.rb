@@ -71,7 +71,6 @@ module NexusSW
 
         def execute_chunked(command, options, &block)
           exitstatus = 0
-          sub_starter = ['lxc ', 'su ubuntu -c lxc\ ']
           if command.is_a?(Array)
             args = command
             command = command.shelljoin
@@ -82,6 +81,12 @@ module NexusSW
           # pp 'top:', command, args
           begin
             case args[0]
+            when 'su'
+              pp args
+              return execute_chunked(args[3], options, &block)
+            when 'bash'
+              pp args
+              return execute_chunked(args[2], options, &block)
             when 'lxc'
               case args[1]
               when 'list' then (args[2] ? yield("[#{@@containers[args[2]].to_json}]") : yield(@@containers.to_json))
@@ -100,13 +105,15 @@ module NexusSW
                     active.exitstatus = 0
                   end
                 else
-                  _, subcommand = command.split(' -- ', 2)
+                  sub_starter = ['lxc ', 'su ubuntu -c ', 'bash -c ']
+                  subcommand = args[4..-1].shelljoin if args[3] == '--' # rubocop:disable Metrics/BlockNesting
                   recurse = false
                   sub_starter.each { |cmd| recurse = true if subcommand.start_with? cmd } if subcommand # rubocop:disable Metrics/BlockNesting
                   if recurse # rubocop:disable Metrics/BlockNesting
-                    subcommand = subcommand.shellsplit.last if subcommand.start_with? sub_starter.last # rubocop:disable Metrics/BlockNesting
+                    subcommand = subcommand.shellsplit.last unless subcommand.start_with? sub_starter.first # rubocop:disable Metrics/BlockNesting
                     # pp 'subcommand:', subcommand
-                    return execute_chunked(subcommand, options.merge(hostcontainer: args[2]), &block)
+                    options[:hostcontainer] = args[2] # if subcommand.start_with? sub_starter.first # rubocop:disable Metrics/BlockNesting
+                    return execute_chunked(subcommand, options, &block)
                   elsif block_given? # rubocop:disable Metrics/BlockNesting
                     if command[/find -type d/] # rubocop:disable Metrics/BlockNesting
                       yield ".\n./support\n"
