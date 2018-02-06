@@ -27,7 +27,7 @@ module NexusSW
             subcommand = options[:subcommand]
             unless subcommand
               subcommand = "exec #{container_name} --"
-              command = ['bash', '-c', command].shelljoin
+              # command = ['bash', '-c', command].shelljoin
             end
             command = "lxc #{subcommand} #{command}"
 
