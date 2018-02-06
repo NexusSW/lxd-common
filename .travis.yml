@@ -1,8 +1,7 @@
 sudo: false
 language: ruby
 rvm:
-- 2.1.0
-- 2.4.3
+- 2.4.2
 - 2.5.0
 - ruby-head
 matrix:
@@ -32,4 +31,4 @@ deploy:
   gem: lxd-common
   on:
     tags: true
-    rvm: 2.4.3
+    rvm: 2.4.2
