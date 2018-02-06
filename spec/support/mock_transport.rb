@@ -82,10 +82,8 @@ module NexusSW
           begin
             case args[0]
             when 'su'
-              pp args
               return execute_chunked(args[3], options, &block)
             when 'bash'
-              pp args
               return execute_chunked(args[2], options, &block)
             when 'lxc'
               case args[1]
@@ -105,24 +103,9 @@ module NexusSW
                     active.exitstatus = 0
                   end
                 else
-                  sub_starter = ['lxc ', 'su ubuntu -c ', 'bash -c ']
-                  subcommand = args[4..-1].shelljoin if args[3] == '--' # rubocop:disable Metrics/BlockNesting
-                  recurse = false
-                  sub_starter.each { |cmd| recurse = true if subcommand.start_with? cmd } if subcommand # rubocop:disable Metrics/BlockNesting
-                  if recurse # rubocop:disable Metrics/BlockNesting
-                    subcommand = subcommand.shellsplit.last unless subcommand.start_with? sub_starter.first # rubocop:disable Metrics/BlockNesting
-                    # pp 'subcommand:', subcommand
-                    options[:hostcontainer] = args[2] # if subcommand.start_with? sub_starter.first # rubocop:disable Metrics/BlockNesting
-                    return execute_chunked(subcommand, options, &block)
-                  elsif block_given? # rubocop:disable Metrics/BlockNesting
-                    if command[/find -type d/] # rubocop:disable Metrics/BlockNesting
-                      yield ".\n./support\n"
-                    elsif command[/find ! -type d/] # rubocop:disable Metrics/BlockNesting
-                      yield "./support/shared_contexts.rb\n"
-                    else
-                      yield '/'
-                    end
-                  end
+                  subcommand = args[4..-1].shelljoin
+                  options[:hostcontainer] = args[2]
+                  return execute_chunked(subcommand, options, &block)
                 end
               when 'start'
                 # @@containers[args[2]]['Status'] = 'Running'
@@ -163,9 +146,18 @@ module NexusSW
                   @@files[local][localfile] = @@files[remotehost][remotefile]
                 end
               end
+            else
+              if block_given?
+                if command[/find -type d/]
+                  yield ".\n./support\n"
+                elsif command[/find ! -type d/]
+                  yield "./support/shared_contexts.rb\n"
+                else
+                  yield '/'
+                end
+              end
             end
           rescue # => e
-            # pp e, e.backtrace
             exitstatus = 1
           end
           Mixins::Helpers::ExecuteMixin::ExecuteResult.new(command, options, exitstatus)
