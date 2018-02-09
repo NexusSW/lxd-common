@@ -50,6 +50,10 @@ module NexusSW
         return ENV['TMPDIR'] unless !ENV['TMPDIR'] || ENV['TMPDIR'].empty?
         '/tmp'
       end
+
+      def self.chdir_mutex
+        @chdir_mutex ||= Mutex.new
+      end
     end
   end
 end

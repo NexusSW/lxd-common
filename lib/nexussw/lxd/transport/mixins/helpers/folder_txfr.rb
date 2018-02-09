@@ -63,8 +63,10 @@ module NexusSW
               begin
                 tfile = Tempfile.new(container_name)
                 tfile.close
-                Dir.chdir File.dirname(local_path) do
-                  Archive::Tar::Minitar.pack File.basename(local_path), Zlib::GzipWriter.new(File.open(tfile.path, 'wb'))
+                Transport.chdir_mutex.synchronize do
+                  Dir.chdir File.dirname(local_path) do
+                    Archive::Tar::Minitar.pack File.basename(local_path), Zlib::GzipWriter.new(File.open(tfile.path, 'wb'))
+                  end
                 end
                 # `tar -c#{flag}f #{tfile.path} -C #{File.dirname local_path} ./#{File.basename local_path}`
                 fname = '/tmp/' + File.basename(tfile.path) + '.tgz'
