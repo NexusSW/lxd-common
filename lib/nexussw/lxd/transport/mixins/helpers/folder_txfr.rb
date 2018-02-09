@@ -7,20 +7,20 @@ module NexusSW
       module Mixins
         module Helpers
           module FolderTxfr
-            def upload_folder(local_path, path, options = {})
-              upload_using_tarball(local_path, path, options) || upload_files_individually(local_path, path, options)
+            def upload_folder(local_path, path)
+              upload_using_tarball(local_path, path) || upload_files_individually(local_path, path)
             end
 
             def download_folder(path, local_path, options = {})
               download_using_tarball(path, local_path, options) || download_files_individually(path, local_path)
             end
 
-            def upload_files_individually(local_path, path, options = {})
+            def upload_files_individually(local_path, path)
               dest = File.join(path, File.basename(local_path))
               execute('mkdir -p ' + dest).error! # for parity with tarball extract
               Dir.entries(local_path).map { |f| (f == '.' || f == '..') ? nil : File.join(local_path, f) }.compact.each do |f|
-                upload_files_individually f, dest, options if File.directory? f
-                upload_file f, File.join(dest, File.basename(f)), options if File.file? f
+                upload_files_individually f, dest if File.directory? f
+                upload_file f, File.join(dest, File.basename(f)) if File.file? f
               end
             end
 
@@ -58,7 +58,7 @@ module NexusSW
               end
             end
 
-            def upload_using_tarball(local_path, path, options = {})
+            def upload_using_tarball(local_path, path)
               return false unless can_archive?
               begin
                 tfile = Tempfile.new(container_name)
@@ -70,7 +70,7 @@ module NexusSW
                 end
                 # `tar -c#{flag}f #{tfile.path} -C #{File.dirname local_path} ./#{File.basename local_path}`
                 fname = '/tmp/' + File.basename(tfile.path) + '.tgz'
-                upload_file tfile.path, fname, options
+                upload_file tfile.path, fname
 
                 execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xf #{fname} && rm -rf #{fname}'").error!
               ensure

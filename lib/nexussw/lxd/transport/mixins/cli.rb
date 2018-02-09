@@ -76,7 +76,7 @@ module NexusSW
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
 
-          def upload_folder(local_path, path, options = {})
+          def upload_folder(local_path, path)
             return super unless config[:info] && config[:info]['api_extensions'] && config[:info]['api_extensions'].include?('directory_manipulation')
 
             execute("-r #{local_path} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
