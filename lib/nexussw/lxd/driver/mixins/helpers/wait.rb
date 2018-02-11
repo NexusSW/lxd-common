@@ -21,6 +21,8 @@ module NexusSW
                 loop do
                   retval = nil
                   case what
+                  when :cloud_init
+                    retval = !transport_for(container_name).execute('test -f /run/cloud-init/result.json').error?
                   when :ip
                     retval = check_for_ip(self, container_name)
                   else

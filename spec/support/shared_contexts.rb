@@ -17,6 +17,7 @@ shared_context 'Driver Test' do |enable_nesting_tests = false|
   include_examples 'it can create containers'
   it 'waits upon startup' do
     ip = driver.wait_for(name, :ip)
+    driver.wait_for(name, :cloud_init)
     expect(ip).not_to eq nil
     expect(ip).not_to be_empty
     expect(ip.is_a?(String)).to be true

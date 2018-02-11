@@ -25,7 +25,13 @@ module NexusSW
         end
 
         def init_files_for_container(container_name)
-          (@@files[container_name] ||= {}).merge! '/etc/passwd' => "root:x:0:0:root:/root:/bin/bash\nubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash\n"
+          (@@files[container_name] ||= {})['/etc/passwd'] = "root:x:0:0:root:/root:/bin/bash\nubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash\n"
+          @@files[container_name]['/run/cloud-init/result.json'] = '{
+            "v1": {
+             "datasource": "DataSourceNoCloud [seed=/var/lib/cloud/seed/nocloud-net][dsmode=net]",
+             "errors": []
+            }
+           }'
         end
 
         include Mixins::Helpers::ExecuteMixin
