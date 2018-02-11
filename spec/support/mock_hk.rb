@@ -1,4 +1,5 @@
 require 'support/mock_transport'
+require 'nio/websocket'
 require 'securerandom'
 require 'yaml'
 require 'tempfile'
@@ -48,16 +49,21 @@ class NexusSW::LXD::RestAPI
         def callback=(newproc)
           @callback = newproc
           return unless @buffer
-          callback.call @buffer
-          @buffer = nil
+          NIO::WebSocket::Reactor.queue_task do
+            callback.call @buffer
+            @buffer = nil
+          end
         end
 
         def binary(_data)
-          callback.call '/'
+          NIO::WebSocket::Reactor.queue_task do
+            callback.call '/'
+          end
         end
       end
 
       def ws_connect(_opid, endpoints)
+        NIO::WebSocket::Reactor.start
         yield(endpoints[:'1'], endpoints[:'2']) if block_given? && endpoints[:'1'] && endpoints[:'2']
         WSDriverStub.new endpoints
       end

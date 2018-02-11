@@ -69,7 +69,11 @@ module NexusSW
               end
 
               def send_output(stdout_chunk)
-                return unless @block
+                loop do
+                  break if @block
+                  sleep 0.1
+                  Thread.pass
+                end
                 @block.call stdout_chunk
               end
 
