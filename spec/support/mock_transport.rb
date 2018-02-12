@@ -72,7 +72,7 @@ module NexusSW
           attr_accessor :block
 
           def write(_cmd)
-            @block.call '/' if @block
+            @block.call " home\n" if @block
           end
         end
 
@@ -160,7 +160,7 @@ module NexusSW
                 elsif command[/find ! -type d/]
                   yield "./support/shared_contexts.rb\n"
                 else
-                  yield '/'
+                  yield " home\r\n"
                 end
               end
             end

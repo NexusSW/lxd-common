@@ -53,6 +53,7 @@ shared_examples 'Transport Functions' do
       end.error!
     end.not_to raise_error
     expect(data.length).to satisfy { |l| l > 0 }
+    expect(data.lines).to include(/ home[\r]?$/)
   end
 
   it 'can output to a file' do
