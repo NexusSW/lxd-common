@@ -44,7 +44,7 @@ shared_examples 'Transport Functions' do
   it 'can execute a command interactively' do
     data = ''
     expect do
-      transport.execute('/bin/bash', capture: :interactive) do |active|
+      transport.execute('/bin/bash', capture: :interactive, tty: false) do |active|
         active.capture_output do |stdout|
           data += stdout if stdout
         end

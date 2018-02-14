@@ -18,18 +18,29 @@ module NexusSW
           def execute_chunked(command, options, &block)
             NIO::WebSocket::Reactor.start
             LXD.with_timeout_and_retries options do
-              Open3.popen3(command) do |stdin, stdout, stderr, th|
-                if options[:capture] == :interactive
-                  # return immediately if interactive so that stdin may be used
-                  return Helpers::ExecuteMixin::InteractiveResult.new(command, options, stdin, th).tap do |active|
-                    chunk_callback(stdout, stderr) do |stdout_chunk, stderr_chunk|
-                      active.send_output stdout_chunk if stdout_chunk
-                      active.send_output stderr_chunk if stderr_chunk
+              if options[:capture] == :interactive
+                if options[:tty] == false
+                  Open3.popen2e(command) do |stdin, stdout, th|
+                    # return immediately if interactive so that stdin may be used
+                    return Helpers::ExecuteMixin::InteractiveResult.new(command, options, stdin, th).tap do |active|
+                      chunk_callback(stdout) do |stdout_chunk|
+                        active.send_output stdout_chunk if stdout_chunk
+                      end
+                      yield active
+                      active.exitstatus = th.value.exitstatus
                     end
-                    yield active
-                    active.exitstatus = th.value.exitstatus
                   end
                 else
+                  status = system command
+                  status = case status
+                           when nil then -1
+                           when true then 0
+                           when false then 1
+                           end
+                  return Helpers::ExecuteMixin::ExecuteResult.new(command, options, status)
+                end
+              else
+                Open3.popen3(command) do |_stdin, stdout, stderr, th|
                   chunk_callback(stdout, stderr, &block) if block_given?
                   th.join
                   loop do
