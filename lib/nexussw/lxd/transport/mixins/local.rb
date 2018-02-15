@@ -76,21 +76,21 @@ module NexusSW
             return nil
           end
 
-          def chunk_callback(stdout, stderr)
+          def chunk_callback(stdout, stderr = nil)
             NIO::WebSocket::Reactor.queue_task do
               @mon_out = NIO::WebSocket::Reactor.selector.register(stdout, :r)
               @mon_out.value = proc do
                 data = read(@mon_out) # read regardless of block_given? so that we don't spin out on :r availability
                 yield(data) if data
               end
-            end
+            end if stdout
             NIO::WebSocket::Reactor.queue_task do
               @mon_err = NIO::WebSocket::Reactor.selector.register(stderr, :r)
               @mon_err.value = proc do
                 data = read(@mon_err) # read regardless of block_given? so that we don't spin out on :r availability
                 yield(nil, data) if data
               end
-            end
+            end if stderr
           end
         end
       end
