@@ -5,7 +5,7 @@
 
 ## Installation
 
-> **NOTE:** Versions < 0.10 are considered pre-release while Version 0.9.8 is considered the first stable pre-release.  Make sure when filing bug reports that you are on at least 0.9.8 and upgrade to 0.10+ as soon as it is possible and available (imminent).
+> **NOTE:** Versions < 0.10 are considered pre-release while Version 0.9.8 is considered the first stable pre-release.  Make sure when filing issues that you are on at least 0.9.8 and upgrade to 0.10+ as soon as it is possible and available (imminent).
 
 Add this line to your application's Gemfile:
 
@@ -21,9 +21,49 @@ Or install it yourself with:
 
     > gem install lxd-common
 
+## Background
+
+This gem intends to completely obfuscate the complexities of communicating with an LXD host.  LXD exposes two methods of interaction: a legacy LXC compatible CLI interface, and a new REST API.  Both behave a bit differently, but remain equally valid for today, and will remain available for the forseeable future.  This gem exposes an interface that will remain consistent, no matter the underlying communication mechanism.
+
+Do you want to:
+
+* Control a local LXD host via the CLI?
+* Control a local/remote LXD host via their REST API?
+* Control a LXD host and not care where it's located or want to deal with the API variances?
+* Oh!  and do you want to control a LXD host that's buried under 2-3+ layers of nesting?  _(some scenarios still under dev at LXD & upstream)_
+
+You're covered.  You provide the credentials and we'll provide the agnostic API.
+
+Coming soon: native clustering support
+
+* (as you would guess) automatic failover of a container when a host goes offline
+* While LXD used to be utilized by larger tools such as juju, openstack & kubernetes to deploy smaller dev-station deployments, LXD will soon be able to 'utilize' and 'deploy' those larger tools without dedicating the host metal or cloud instances to those tools.
+* (role reversal) It'll be your choice who drives:  LXD or those other utilities.
+
+You'll no longer have to dedicate your metal, or your cloud instances to these large scale deployments.  They can do other things, too, by containerizing all the things.
+
 ## Usage
 
-TODO:
+This gem is split up into 2 functional areas:  Driver and Transport.  Constructing a driver object does require some environment specific information.  But once you have the driver object constructed, all else is generic.
+
+### Driver
+
+Drivers allow you to communicate with the LXD host directly and to perform all command and control operations such as creating a container, as well as starting/stopping/deleting and for setting and querying container configuration.
+
+There are 2 different drivers at your disposal:
+
+* NexusSW::LXD::Driver::Rest
+* NexusSW::LXD::Driver::CLI
+
+And once they're constructed, they both respond to the same API calls in the same way, and so you no longer need to deal with API variances.  The next sections tell you how to construct these drivers, but the final 'Driver methods' section, and everything afterwards, is completely agnostic.
+
+#### REST Interface Driver
+
+#### Local CLI Driver
+
+#### CLI Driver "magic"
+
+#### Driver methods
 
 ## Contributing: Development and Testing
 
@@ -59,4 +99,4 @@ Refer to [spec/provision_recipe.rb](https://github.com/NexusSW/lxd-common/blob/m
 
 When developing your new functionality, keep in mind that this gem intends to obfuscate the differences in the behavior between LXD's CLI and REST interfaces.  The test suite is designed to expose such differences, and it may become necessary for you to create completely seperate implementations in order to make them behave identically.
 
-Whether to expose the behavior of the CLI, or that of the REST interface, will be up for debate on a case by case basis.  But they do need to have the same behavior.  And that should be in line with the behavior of other pre-existing functions, should they fall within the same category or interact.
+Whether to expose the behavior of the CLI, or that of the REST interface, or something in between, will be up for debate on a case by case basis.  But they do need to have the same behavior.  And that should be in line with the behavior of other pre-existing functions, should they fall within the same category or interact.
