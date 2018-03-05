@@ -49,7 +49,7 @@ module NexusSW
         raise "#{self.class}#container_state not implemented"
       end
 
-      def wait_for(_what)
+      def wait_for(_container_name, _what, _timeout = 60)
         raise "#{self.class}#wait_for not implemented"
       end
 
