@@ -46,24 +46,67 @@ You'll no longer have to dedicate your metal, or your cloud instances to these l
 
 This gem is split up into 2 functional areas:  Driver and Transport.  Constructing a driver object does require some environment specific information.  But once you have the driver object constructed, all else is generic.
 
-### Driver
-
 Drivers allow you to communicate with the LXD host directly and to perform all command and control operations such as creating a container, as well as starting/stopping/deleting and for setting and querying container configuration.
+
+Transports allow you to make use of a container.  They can execute commands inside of a container, and transfer files in and out of a container.  Transports can be obtained by executing `transport = driver.transport_for 'containername'` on any driver.
+
+### Drivers
 
 There are 2 different drivers at your disposal:
 
 * NexusSW::LXD::Driver::Rest
 * NexusSW::LXD::Driver::CLI
 
-And once they're constructed, they both respond to the same API calls in the same way, and so you no longer need to deal with API variances.  The next sections tell you how to construct these drivers, but the final 'Driver methods' section, and everything afterwards, is completely agnostic.
+And once they're constructed, they both respond to the same API calls in the same way, and so you no longer need to deal with API variances.  The next sections tell you how to construct these drivers, but the final 'Driver methods' section, and everything afterwards, is completely generic.
 
-#### REST Interface Driver
+#### REST Driver
 
-#### Local CLI Driver
+ex: `driver = NexusSW::LXD::Driver::Rest.new 'https://someserver:8443', verify_ssl: false`
 
-#### CLI Driver "magic"
+The first parameter of course being the REST endpoint of the LXD host.  SSL verfication is enabled by default and can be disabled with the options shortcut of `verify_ssl: false`.  The other option available is `ssl:` and has the following subkeys:
+
+key | default | description
+---|:---:|---
+verify | true | overrides `verify_ssl`.  verify_ssl is just a shortcut to this option for syntactic sugar when no other ssl options are needed
+client_cert | ~/.config/lxc/client.crt | client certificate file used to authorize your connection to the LXD host
+client_key | ~/.config/lxc/client.key | key file associated with the above certificate
+
+ex2: `driver = NexusSW::LXD::Driver::Rest.new 'https://someserver:8443', ssl: { verify: false, client_cert: '/someother.crt', client_key: '/someother.key' }`
+
+#### CLI Driver
+
+The CLI driver is a different beast.  All it knows is 'how' to construct `lxc` commands, just as you would type them into your shell if you were managing LXD manually.  It doesn't know 'where' to execute those commands by default, and so you have to give it a transport.  You'll see why in the next section.
+
+ex: `driver = NexusSW::LXD::Driver::CLI.new(NexusSW::LXD::Transport::Local.new)`
+
+There are no options at present.  You only need to pass in a transport telling the CLI driver 'where' to run its commands.  Above I've demonstrated using the Local Transport which executes the `lxc` commands on the local machine.  Using the CLI driver with the Local transport is usually synonymous to using the Rest driver pointed at localhost (barring any environmental modifications).
+
+##### CLI Driver _magic_: nested containers
+
+And so I briefly mentioned that you can call `transport_for` on any driver to gain a transport instance.  And I alluded to the CLI driver working with any transport.  By extension this would mean that you can use the CLI driver to execute `lxc` commands almost anywhere.  The CLI driver only cares that the transport it is given implements the NexusSW::LXD::Transport interface.
+
+So what if we did this?
+
+```ruby
+1> outerdriver = NexusSW::LXD::Driver::Rest.new 'https://someserver:8443'
+2> resttransport = outerdriver.transport_for 'somecontainer'
+
+3> middledriver = NexusSW::LXD::Driver::CLI.new resttransport
+4> middletransport = middledriver.transport_for 'nestedcontainer'
+
+5> innerdriver = NexusSW::LXD::Driver::CLI.new middletransport
+6> innertransport = innerdriver.transport_for 'some-waaaay-nested-container'
+
+7> innertransport.read_file '/tmp/something_interesting'
+```
+
+That would totally work!!!  On line 3 you can see the CLI driver accepting a transport produced by the REST API.  And on line 5 you see the CLI driver consuming a transport produced by a different instance of itself.  It all works given the caveat that you've set up nested LXD hosts on both 'somecontainer' and 'nestedcontainer' (an exercise for the reader).
 
 #### Driver methods
+
+### Transports
+
+#### Transport methods
 
 ## Contributing: Development and Testing
 
@@ -86,12 +129,12 @@ Refer to [spec/provision_recipe.rb](https://github.com/NexusSW/lxd-common/blob/m
 **NOTE:** In contrast to normal expectations, these tests are not isolated and are stateful in between test cases.  Pay attention to tests that expect a container to exist, or for a file to exist within a container.  (Apologies: integration test times would be exponentially higher if I didn't make this concession)
 
 1. run `rake mock` to verify your dependencies.  Expect it to pass.  Fix whatever is causing failures.
-2. Write your failing test case(s)
+2. **Write your failing test case(s)**
 3. run `rake mock`.  If there are compilation errors or exceptions generated by the spec/support/mock_transport.rb that cause pre-existing tests to fail, fix them so that past tests pass, and that your new tests compile (if feasible), but fail.
-4. Create your new functionality
+4. **Create your new functionality**
 5. run `rake mock` again.  Code the mock_transport (and/or potentially the mock_hk) to return the results that you expect the LXD host to return.
 6. Repeat the above until `rake mock` passes
-7. run `rake spec` to see if your changes work for real.  Or if you can't set your workstation up for integration tests as described above, submit a PR and let Travis tell you.
+7. run `rake spec` to see if your changes work for real.  Or if you can't set your workstation up for integration tests as described above, submit a PR and let Travis test it.
 
 `rake mock` and `rake spec` must both pass before Travis will pass.
 
@@ -99,4 +142,4 @@ Refer to [spec/provision_recipe.rb](https://github.com/NexusSW/lxd-common/blob/m
 
 When developing your new functionality, keep in mind that this gem intends to obfuscate the differences in the behavior between LXD's CLI and REST interfaces.  The test suite is designed to expose such differences, and it may become necessary for you to create completely seperate implementations in order to make them behave identically.
 
-Whether to expose the behavior of the CLI, or that of the REST interface, or something in between, will be up for debate on a case by case basis.  But they do need to have the same behavior.  And that should be in line with the behavior of other pre-existing functions, should they fall within the same category or interact.
+Whether to expose the behavior of the CLI, or that of the REST interface, or something in between, will be up for debate on a case by case basis.  But they do need to have the same behavior.  And that should be in line with the behavior of other pre-existing functions, should they fall within the same category or otherwise interact.
