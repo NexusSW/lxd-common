@@ -107,6 +107,8 @@ That would totally work!!!  On line 3 you can see the CLI driver accepting a tra
 
 To add one more point of emphasis:  drivers talk to an LXD host while transports talk to individual containers.
 
+**NOTE:** Due to the behavior of some of the underlying long-running tasks inherent in LXD (It can take a minute to create, start, or stop a container), these driver methods are implemented with a more convergent philosophy rather than being classicly imperitive.  This means that, for example, a call to delete_container will NOT fail if that container does not exist (one would otherwise expect a 404, e.g.).  Similarly, start_container will not fail if the container is already started.  The driver just ensures that the container state is what you just asked for, and if it is, then great!  If this is not your desired behavior, then ample other status check methods are available for you to handle these errors in your desired way.
+
 Here are some of the things that you can do while talking to an LXD host:  (driver methods)
 
 method name | parameters | options | description
@@ -130,17 +132,21 @@ And having navigated all of the above, you now have a transport instance.  And h
 method name | parameters | options | description
 ---|---|---|---
 user | _user |  _options = {})
-execute | _command |  _options = {})
 read_file | _path)
 write_file | _path, _content |  _options = {})
 download_file | _path, _local_path)
 download_folder | _path, _local_path |  _options = {})
 upload_file | _local_path, _path |  _options = {})
 upload_folder | _local_path, _path |  _options = {})
+execute | command |  options = {} | _see next section_
+
+##### Transport.execute
+
+This one merits a section of its own.
 
 ## Contributing: Development and Testing
 
-Bug reports and pull requests are welcome on GitHub at <https://github.com/NexusSW/lxd-common>.  DCO signoffs are required.
+Bug reports and pull requests are welcome on GitHub at <https://github.com/NexusSW/lxd-common>.  DCO signoffs are required on your pull requests.
 
 After checking out this repo, and installing development dependencies via `bundle install`, you can run some quick smoke tests that exercise most code paths via `rake mock`.  This just exercises the gem without talking to an actual LXD host.
 
@@ -150,7 +156,7 @@ The full integration test suite `rake spec` requires:
 * your user account to be in the lxd group
 * a client certificate and key located in ~/.config/lxc/ named client.crt and client.key
 * and that certificate to be trusted by the LXD host via `lxc config trust add ~/.config/lxc/client.crt`
-* a decent internet connection.  Most of the test time is spent in downloading images and spinning up containers.  So the quicker your filesystem and internet, the quicker the tests will run.  As a benchmark, Travis runs the integration tests in (presently) ~6-7 minutes, which includes installation and setup time.  If feasible, set your LXD up to use BTRFS to speed up the nesting tests.
+* _recommended_:  a decent internet connection.  Most of the test time is spent in downloading images and spinning up containers.  So the quicker your filesystem and internet, the quicker the tests will run.  As a benchmark, Travis runs the integration tests in (presently) ~6-7 minutes, which includes installation and setup time.  If feasible, set your LXD up to use BTRFS to speed up the nesting tests.
 
 Refer to [spec/provision_recipe.rb](https://github.com/NexusSW/lxd-common/blob/master/spec/provision_recipe.rb) (Chef) if you need hints on how to accomplish this setup.
 
