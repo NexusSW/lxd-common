@@ -97,16 +97,46 @@ So what if we did this?
 5> innerdriver = NexusSW::LXD::Driver::CLI.new middletransport
 6> innertransport = innerdriver.transport_for 'some-waaaay-nested-container'
 
-7> innertransport.read_file '/tmp/something_interesting'
+7> contents = innertransport.read_file '/tmp/something_interesting'
+8> puts innertransport.execute('dmesg').error!.stdout
 ```
 
 That would totally work!!!  On line 3 you can see the CLI driver accepting a transport produced by the REST API.  And on line 5 you see the CLI driver consuming a transport produced by a different instance of itself.  It all works given the caveat that you've set up nested LXD hosts on both 'somecontainer' and 'nestedcontainer' (an exercise for the reader).
 
 #### Driver methods
 
+To add one more point of emphasis:  drivers talk to an LXD host while transports talk to individual containers.
+
+Here are some of the things that you can do while talking to an LXD host:  (driver methods)
+
+method name | parameters | options | description
+---|---|---|---
+create_container | container_name | container_options
+start_container | container_name
+stop_container | container_name | options
+delete_container | container_name
+container_status | container_name
+container | container_name
+container_state | container_name
+wait_for | what
+transport_for | container_name
+
 ### Transports
 
+And having navigated all of the above, you now have a transport instance.  And here's what you can do with it:
+
 #### Transport methods
+
+method name | parameters | options | description
+---|---|---|---
+user | _user |  _options = {})
+execute | _command |  _options = {})
+read_file | _path)
+write_file | _path, _content |  _options = {})
+download_file | _path, _local_path)
+download_folder | _path, _local_path |  _options = {})
+upload_file | _local_path, _path |  _options = {})
+upload_folder | _local_path, _path |  _options = {})
 
 ## Contributing: Development and Testing
 
