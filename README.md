@@ -34,14 +34,6 @@ Do you want to:
 
 You're covered.  You provide the credentials and we'll provide the agnostic API.
 
-Coming soon: native clustering support
-
-* (as you would guess) automatic failover of a container when a host goes offline
-* While LXD used to be utilized by larger tools such as juju, openstack & kubernetes to deploy smaller dev-station deployments, LXD will soon be able to 'utilize' and 'deploy' those larger tools without dedicating the host metal or cloud instances to those tools.
-* (role reversal) It'll be your choice who drives:  LXD or those other utilities.
-
-You'll no longer have to dedicate your metal, or your cloud instances to these large scale deployments.  They can do other things, too, by containerizing all the things.
-
 ## Usage
 
 This gem is split up into 2 functional areas:  Driver and Transport.  Constructing a driver object does require some environment specific information.  But once you have the driver object constructed, all else is generic.
@@ -95,41 +87,47 @@ So what if we did this?
 4> middletransport = middledriver.transport_for 'nestedcontainer'
 
 5> innerdriver = NexusSW::LXD::Driver::CLI.new middletransport
-6> innertransport = innerdriver.transport_for 'some-waaaay-nested-container'
+6> innertransport = innerdriver.transport_for 'some-very-nested-container'
 
 7> contents = innertransport.read_file '/tmp/something_interesting'
 8> puts innertransport.execute('dmesg').error!.stdout
 ```
 
-That would totally work!!!  On line 3 you can see the CLI driver accepting a transport produced by the REST API.  And on line 5 you see the CLI driver consuming a transport produced by a different instance of itself.  It all works given the caveat that you've set up nested LXD hosts on both 'somecontainer' and 'nestedcontainer' (an exercise for the reader).
+That would totally work!!!  The final innertransport object is a transport for 'some-very-nested-container' that is itself running within a container named 'nestedcontainer', that is also itself running inside of 'somecontainer' that is remotely located on 'someserver'.
+
+On line 3 you can see the CLI driver accepting a transport produced by the REST API.  And on line 5 you see the CLI driver consuming a transport produced by a different instance of itself.  It all works given the caveat that you've set up nested LXD hosts on both 'somecontainer' and 'nestedcontainer' (an exercise for the reader).
 
 #### Driver methods
 
 To add one more point of emphasis:  drivers talk to an LXD host while transports talk to individual containers.
 
-**NOTE:** Due to the behavior of some of the underlying long-running tasks inherent in LXD (It can take a minute to create, start, or stop a container), these driver methods are implemented with a more convergent philosophy rather than being classicly imperitive.  This means that, for example, a call to delete_container will NOT fail if that container does not exist (one would otherwise expect a 404, e.g.).  Similarly, start_container will not fail if the container is already started.  The driver just ensures that the container state is what you just asked for, and if it is, then great!  If this is not your desired behavior, then ample other status check methods are available for you to handle these errors in your desired way.
+**NOTE:** Due to the behavior of some of the underlying long-running tasks inherent in LXD (It can take a minute to create, start, or stop a container), these driver methods are implemented with a more convergent philosophy rather than being classically imperitive.  This means that, for example, a call to delete_container will NOT fail if that container does not exist (one would otherwise expect a 404, e.g.).  Similarly, start_container will not fail if the container is already started.  The driver just ensures that the container state is what you just asked for, and if it is, then great!  If this is not your desired behavior, then ample other status check methods are available for you to handle these errors in your desired way.
 
 Here are some of the things that you can do while talking to an LXD host:  (driver methods)
 
-method name | parameters | options | description
+method name | parameters | options | notes
 ---|---|---|---
-create_container | container_name | container_options
+create_container | container_name | _see next section_ | _see next section_
 start_container | container_name
-stop_container | container_name | options
-delete_container | container_name
-container_status | container_name
-container | container_name
-container_state | container_name
-wait_for | what
-transport_for | container_name
+stop_container | container_name | force: false<br />timeout: 0<br />retry_interval: _unset_<br />retry_count: _unset_ | the default behavior is no force, no timeout, and no retries.  This is analogous to sending a SIGPWR to the init system within the container and waiting for a graceful shutdown.  Specifying `force: true` instead sends a SIGKILL to the container
+delete_container | container_name | | This will force stop the container, if it is currently running, prior to deleting.  If you need a graceful shutdown, send the stop_container command on your own.
+container_status | container_name | | returns a simple container status string such as 'running' or 'stopped'
+container | container_name | | returns the current container configuration
+container_state | container_name | | returns various runtime info regarding the running state of the container (e.g. IP Address, Memory utilization, etc...)
+wait_for | container_name, what, timeout = 60 | | 'what' currently supports `:ip`, and `:cloud_init`.  Upon container start, this method will wait for an IP to be assigned, or for cloud-init to complete, respectively
+transport_for | container_name | | returns a transport used to communicate directly with a container
+
+##### Driver.create_container
+
+lots of options
 
 ### Transports
 
-And having navigated all of the above, you now have a transport instance.  And here's what you can do with it:
+And having navigated all of the above, you now have a transport instance.  Here's what you can do with it:
 
 #### Transport methods
 
-method name | parameters | options | description
+method name | parameters | options | notes
 ---|---|---|---
 user | _user |  _options = {})
 read_file | _path)
@@ -138,7 +136,7 @@ download_file | _path, _local_path)
 download_folder | _path, _local_path |  _options = {})
 upload_file | _local_path, _path |  _options = {})
 upload_folder | _local_path, _path |  _options = {})
-execute | command |  options = {} | _see next section_
+execute | command |  _see next section_ | _see next section_
 
 ##### Transport.execute
 
