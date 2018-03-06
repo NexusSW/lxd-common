@@ -114,7 +114,7 @@ delete_container | container_name | | This will force stop the container, if it 
 container_status | container_name | | returns a simple container status string such as 'running' or 'stopped'.  There are many other intermediate states, but these 2 are most likely the ones to be interested in.
 container | container_name | | returns the current container configuration
 container_state | container_name | | returns various runtime info regarding the running state of the container (e.g. IP Address, Memory utilization, etc...)
-wait_for | container_name,<br />what,<br />timeout = 60 | | 'what' currently supports `:ip`, and `:cloud_init`.  Upon container start, this method will wait for an IP to be assigned, or for cloud-init to complete, respectively
+wait_for | container_name,<br />what,<br />timeout = 60 | | 'what' currently supports `:ip`, and `:cloud_init`.  After container start, calling this method will wait for an IP to be assigned, or for cloud-init to complete, respectively
 transport_for | container_name | | returns a transport used to communicate directly with a container.  Note that the container itself does not need to be directly routable.  If you have access to the host, then this transport will just plain work.
 
 ##### Driver.create_container
@@ -139,25 +139,25 @@ option | default | notes
 
 ###### Examples
 
-simple:
+minimum:
 
 ```ruby
 driver.create_container 'some-container', alias: 'ubuntu:18.04', \
-    server: 'https://cloud-images.ubuntu.com/releases', protocol: 'simplestreams'
+    server: 'https://cloud-images.ubuntu.com/daily', protocol: 'simplestreams'
 ```
 
 more complex:
 
 ```ruby
 driver.create_container 'dev-cattle-01', profiles: ['default', 'cattle'], \
-    server: 'https://images.linuxcontainers.org', protocol: 'simplestreams', \
     config: { 'security.nesting': true, 'security.privileged': true }, \
+    server: 'https://images.linuxcontainers.org', protocol: 'simplestreams', \
     alias: 'ubuntu/bionic'
 ```
 
 ### Transports
 
-And having navigated all of the above, you can now get your transport instance with<br />`transport = driver.transport_for 'dev-cattle-01'`.  Here's what you can do with it:
+And having navigated all of the above, you can now get your transport instance with<br />`transport = driver.transport_for 'some-container'`.  Here's what you can do with it:
 
 #### Transport methods
 
