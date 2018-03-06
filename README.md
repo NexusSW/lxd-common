@@ -101,7 +101,7 @@ On line 3 you can see the CLI driver accepting a transport produced by the REST 
 
 To add one more point of emphasis:  drivers talk to an LXD host while transports talk to individual containers.
 
-**NOTE:** Due to the behavior of some of the underlying long-running tasks inherent in LXD (It can take a minute to create, start, or stop a container), these driver methods are implemented with a more convergent philosophy rather than being classically imperitive.  This means that, for example, a call to delete_container will NOT fail if that container does not exist (one would otherwise expect a 404, e.g.).  Similarly, start_container will not fail if the container is already started.  The driver just ensures that the container state is what you just asked for, and if it is, then great!  If this is not your desired behavior, then ample other status check methods are available for you to handle these errors in your desired way.
+**NOTE:** Due to the behavior of some of the underlying long-running tasks inherent in LXD (It can take a minute to create, start, or stop a container), these driver methods are implemented with a more convergent philosophy rather than being classically imperitive.  This means that, for example, a call to delete_container will NOT fail if that container does not exist (one would otherwise expect a 404, e.g.).  Similarly, start_container will not fail if the container is already started.  The driver just ensures that the container state is what you just asked for, and if it is, then great!  And if it is not, then it will send the necessary commands.  If this is not your desired behavior, then ample other status check methods are available for you to handle these errors in your desired way.
 
 Here are some of the things that you can do while talking to an LXD host:  (driver methods)
 
@@ -109,21 +109,55 @@ method name | parameters | options | notes
 ---|---|---|---
 create_container | container_name | _see next section_ | _see next section_
 start_container | container_name
-stop_container | container_name | force: false<br />timeout: 0<br />retry_interval: _unset_<br />retry_count: _unset_ | the default behavior is no force, no timeout, and no retries.  This is analogous to sending a SIGPWR to the init system within the container and waiting for a graceful shutdown.  Specifying `force: true` instead sends a SIGKILL to the container
+stop_container | container_name | force: false<br />timeout: 0<br />retry_interval:&nbsp;_unset_<br />retry_count:&nbsp;_unset_ | the default behavior is no force, no timeout, and no retries.  This is analogous to sending a SIGPWR to the init system within the container and waiting for a graceful shutdown.  Specifying `force: true` instead sends a SIGKILL to the container
 delete_container | container_name | | This will force stop the container, if it is currently running, prior to deleting.  If you need a graceful shutdown, send the stop_container command on your own.
-container_status | container_name | | returns a simple container status string such as 'running' or 'stopped'
+container_status | container_name | | returns a simple container status string such as 'running' or 'stopped'.  There are many other intermediate states, but these 2 are most likely the ones to be interested in.
 container | container_name | | returns the current container configuration
 container_state | container_name | | returns various runtime info regarding the running state of the container (e.g. IP Address, Memory utilization, etc...)
-wait_for | container_name, what, timeout = 60 | | 'what' currently supports `:ip`, and `:cloud_init`.  Upon container start, this method will wait for an IP to be assigned, or for cloud-init to complete, respectively
-transport_for | container_name | | returns a transport used to communicate directly with a container
+wait_for | container_name,<br />what,<br />timeout = 60 | | 'what' currently supports `:ip`, and `:cloud_init`.  Upon container start, this method will wait for an IP to be assigned, or for cloud-init to complete, respectively
+transport_for | container_name | | returns a transport used to communicate directly with a container.  Note that the container itself does not need to be directly routable.  If you have access to the host, then this transport will just plain work.
 
 ##### Driver.create_container
 
-lots of options
+Source image options:  (one of alias, fingerprint, properties MUST be specified)
+
+option | default | notes
+---|---|---
+:server | none | server:port from which to obtain a base image<br />e.g. `https://images.linuxcontainers.org`,<br />`https://cloud-images.ubuntu.com/releases`,<br />`https://cloud-images.ubuntu.com/daily`
+:protocol | 'lxd' | Use 'lxd' or 'simplestreams' to communicate with the source server.  Use 'simplestreams' for the above public servers
+:alias | none | server dependant.  e.g. `ubuntu:16.04` or `ubuntu/xenial`.  Refer to the image catalog of each server for valid values.
+:fingerprint | none | partial matches accepted.  Each individual image gets a fingerprint.
+:properties | none | A Hash with image search parameters.  Refer to LXD documentation for valid key value pairs.  (Use of :properties is discouraged due to its non-deterministic nature)
+
+The above is how you locate a base image for your new container.  The next options allow you to specify last minute configuration details.
+
+option | default | notes
+---|---|---
+:profiles | ['default'] | An ordered array of profiles to apply to your new container.  If you specify ANY profiles, and still want the 'default' profile applied, then you must explicitly include 'default' in your array
+:config | none | A Hash of configuration options to apply to this specific container.  Refer to LXD documentation for valid key value pairs.  https://github.com/lxc/lxd/blob/master/doc/containers.md
+:devices | | _\<coming soon>_  The Devices section in the above link will be allowed.
+
+###### Examples
+
+simple:
+
+```ruby
+driver.create_container 'some-container', alias: 'ubuntu:18.04', \
+    server: 'https://cloud-images.ubuntu.com/releases', protocol: 'simplestreams'
+```
+
+more complex:
+
+```ruby
+driver.create_container 'dev-cattle-01', profiles: ['default', 'cattle'], \
+    server: 'https://images.linuxcontainers.org', protocol: 'simplestreams', \
+    config: { 'security.nesting': true, 'security.privileged': true }, \
+    alias: 'ubuntu/bionic'
+```
 
 ### Transports
 
-And having navigated all of the above, you now have a transport instance.  Here's what you can do with it:
+And having navigated all of the above, you can now get your transport instance with<br />`transport = driver.transport_for 'dev-cattle-01'`.  Here's what you can do with it:
 
 #### Transport methods
 
@@ -144,7 +178,7 @@ This one merits a section of its own.
 
 ## Contributing: Development and Testing
 
-Bug reports and pull requests are welcome on GitHub at <https://github.com/NexusSW/lxd-common>.  DCO signoffs are required on your pull requests.
+Bug reports and pull requests are welcome on GitHub at <https://github.com/NexusSW/lxd-common>.  DCO signoffs are required on your commits.
 
 After checking out this repo, and installing development dependencies via `bundle install`, you can run some quick smoke tests that exercise most code paths via `rake mock`.  This just exercises the gem without talking to an actual LXD host.
 
