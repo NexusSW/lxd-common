@@ -1,6 +1,6 @@
-require 'faraday'
-require 'json'
-require 'openssl'
+require "faraday"
+require "json"
+require "openssl"
 
 module NexusSW
   module LXD
@@ -73,7 +73,7 @@ module NexusSW
           response = connection.send(verb) do |req|
             req.url relative_url
             if content.is_a? Hash
-              req.headers['Content-Type'] = 'application/json'
+              req.headers["Content-Type"] = "application/json"
               req.body = content.to_json
             elsif content # Only upon file upload at this time
               yield req if block_given?
@@ -83,9 +83,9 @@ module NexusSW
           end
           if response.status >= 400
             err = JSON.parse(response.body)
-            case err['error_code']
-            when 404 then raise RestAPI::Error::NotFound, err['error']
-            when 400 then raise RestAPI::Error::BadRequest, err['error']
+            case err["error_code"]
+            when 404 then raise RestAPI::Error::NotFound, err["error"]
+            when 400 then raise RestAPI::Error::BadRequest, err["error"]
             else raise RestAPI::Error, "Error #{err['error_code']}: #{err['error']}"
             end
           end

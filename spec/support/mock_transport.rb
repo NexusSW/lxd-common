@@ -1,10 +1,10 @@
 
-require 'nexussw/lxd/transport/mixins/helpers/execute'
-require 'nexussw/lxd/transport/mixins/helpers/folder_txfr'
-require 'spec_helper'
-require 'yaml'
-require 'shellwords'
-require 'pp'
+require "nexussw/lxd/transport/mixins/helpers/execute"
+require "nexussw/lxd/transport/mixins/helpers/folder_txfr"
+require "spec_helper"
+require "yaml"
+require "shellwords"
+require "pp"
 
 module NexusSW
   module LXD
@@ -12,7 +12,7 @@ module NexusSW
       class Mock < Transport
         def initialize(config = {})
           @config = config
-          init_files_for_container 'mock:'
+          init_files_for_container "mock:"
         end
 
         attr_reader :config
@@ -20,13 +20,13 @@ module NexusSW
         @@containers = {} # rubocop:disable Style/ClassVars
         @@files = {} # rubocop:disable Style/ClassVars
         def split_container_name(filename)
-          @@containers.each { |k, _| return [k, filename.sub(k, '')] if filename.start_with? k }
+          @@containers.each { |k, _| return [k, filename.sub(k, "")] if filename.start_with? k }
           [nil, filename]
         end
 
         def init_files_for_container(container_name)
-          (@@files[container_name] ||= {})['/etc/passwd'] = "root:x:0:0:root:/root:/bin/bash\nubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash\n"
-          @@files[container_name]['/run/cloud-init/result.json'] = '{
+          (@@files[container_name] ||= {})["/etc/passwd"] = "root:x:0:0:root:/root:/bin/bash\nubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash\n"
+          @@files[container_name]["/run/cloud-init/result.json"] = '{
             "v1": {
              "datasource": "DataSourceNoCloud [seed=/var/lib/cloud/seed/nocloud-net][dsmode=net]",
              "errors": []
@@ -39,12 +39,12 @@ module NexusSW
 
         def running_container_state
           {
-            'status_code' => 103,
-            'network' => {
-              'eth0' => {
-                'addresses' => [{
-                  'address' => '127.0.0.1',
-                  'family' => 'inet',
+            "status_code" => 103,
+            "network" => {
+              "eth0" => {
+                "addresses" => [{
+                  "address" => "127.0.0.1",
+                  "family" => "inet",
                 }],
               },
             },
@@ -57,12 +57,12 @@ module NexusSW
 
         def new_container(name)
           {
-            'status_code' => 103,
-            'name' => name,
-            'state' => running_container_state,
-            'expanded_devices' => {
-              'eth0' => {
-                'type' => 'nic',
+            "status_code" => 103,
+            "name" => name,
+            "state" => running_container_state,
+            "expanded_devices" => {
+              "eth0" => {
+                "type" => "nic",
               },
             },
           }
@@ -88,18 +88,18 @@ module NexusSW
           # pp 'top:', command, args
           begin
             case args[0]
-            when 'su'
+            when "su"
               return execute_chunked(args[3], options, &block)
-            when 'bash'
+            when "bash"
               return execute_chunked(args[2], options, &block)
-            when 'lxc'
+            when "lxc"
               case args[1]
-              when 'list' then (args[2] ? yield("[#{@@containers[args[2]].to_json}]") : yield(@@containers.to_json))
+              when "list" then (args[2] ? yield("[#{@@containers[args[2]].to_json}]") : yield(@@containers.to_json))
               # when 'info' then yield @@containers[args[2]].to_yaml
-              when 'launch'
-                exitstatus = 1 unless args[2].include? 'ubuntu:'
-                @@containers[args[3]] = new_container(args[3]) if args[2].include? 'ubuntu:'
-              when 'exec'
+              when "launch"
+                exitstatus = 1 unless args[2].include? "ubuntu:"
+                @@containers[args[3]] = new_container(args[3]) if args[2].include? "ubuntu:"
+              when "exec"
                 if options[:capture] == :interactive
                   stub = StdinStub.new(&block)
                   return Mixins::Helpers::ExecuteMixin::InteractiveResult.new(command, options, stub).tap do |active|
@@ -114,41 +114,41 @@ module NexusSW
                   options[:hostcontainer] = args[2]
                   return execute_chunked(subcommand, options, &block)
                 end
-              when 'start'
+              when "start"
                 # @@containers[args[2]]['Status'] = 'Running'
-                @@containers[args[2]]['status_code'] = 103
-                @@containers[args[2]]['state'] = running_container_state
-              when 'stop'
+                @@containers[args[2]]["status_code"] = 103
+                @@containers[args[2]]["state"] = running_container_state
+              when "stop"
                 # @@containers[args[2]]['Status'] = 'Stopped'
-                @@containers[args[2]]['status_code'] = 102
-                @@containers[args[2]]['state'] = nil
-              when 'delete' then @@containers.delete args[2]
-              when 'file'
-                local = options[:hostcontainer] || 'mock:'
-                localfile = ''
+                @@containers[args[2]]["status_code"] = 102
+                @@containers[args[2]]["state"] = nil
+              when "delete" then @@containers.delete args[2]
+              when "file"
+                local = options[:hostcontainer] || "mock:"
+                localfile = ""
                 remotehost, remotefile =  case args[2]
-                                          when 'push'
+                                          when "push"
                                             idx = 3
-                                            idx += 1 if args[idx] == '-r' # rubocop:disable Metrics/BlockNesting
-                                            idx += 1 if args[idx].start_with? '--uid=' # rubocop:disable Metrics/BlockNesting
-                                            idx += 1 if args[idx].start_with? '--gid=' # rubocop:disable Metrics/BlockNesting
-                                            idx += 1 if args[idx].start_with? '--mode=' # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx] == "-r" # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx].start_with? "--uid=" # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx].start_with? "--gid=" # rubocop:disable Metrics/BlockNesting
+                                            idx += 1 if args[idx].start_with? "--mode=" # rubocop:disable Metrics/BlockNesting
                                             localfile = args[idx]
                                             split_container_name args[idx + 1]
-                                          when 'pull'
+                                          when "pull"
                                             localfile = args[4]
                                             split_container_name args[3]
                                           end
                 case args[2]
-                when 'push'
+                when "push"
                   init_files_for_container remotehost
                   @@files[remotehost][remotefile] = @@files[local][localfile]
                   @@files[local].each do |f, content|
-                    if f.start_with?(localfile + '/') # rubocop:disable Metrics/BlockNesting
+                    if f.start_with?(localfile + "/") # rubocop:disable Metrics/BlockNesting
                       @@files[remotehost][f.sub(File.dirname(localfile), remotefile)] = content
                     end
                   end
-                when 'pull'
+                when "pull"
                   init_files_for_container local
                   @@files[local][localfile] = @@files[remotehost][remotefile]
                 end
@@ -171,22 +171,22 @@ module NexusSW
         end
 
         def read_file(path)
-          @@files['mock:'][path] || ''
+          @@files["mock:"][path] || ""
         end
 
         def write_file(path, content)
-          @@files['mock:'][path] = content
+          @@files["mock:"][path] = content
         end
 
         def download_file(path, local_path)
-          File.open local_path, 'w' do |f|
-            f.write @@files['mock:'][path]
+          File.open local_path, "w" do |f|
+            f.write @@files["mock:"][path]
           end
         end
 
         def upload_file(local_path, path)
           raise "File does not exist (#{localpath})" unless File.exist? local_path
-          return @@files['mock:'][path] = File.read(local_path) if File.file? local_path
+          return @@files["mock:"][path] = File.read(local_path) if File.file? local_path
         end
       end
     end

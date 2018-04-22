@@ -1,5 +1,5 @@
-require 'nexussw/lxd/driver'
-require 'nexussw/lxd/driver/mixins/cli'
+require "nexussw/lxd/driver"
+require "nexussw/lxd/driver/mixins/cli"
 
 module NexusSW
   module LXD

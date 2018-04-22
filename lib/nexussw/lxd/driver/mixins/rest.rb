@@ -1,6 +1,6 @@
-require 'nexussw/lxd/rest_api'
-require 'nexussw/lxd/driver/mixins/helpers/wait'
-require 'nexussw/lxd/transport/rest'
+require "nexussw/lxd/rest_api"
+require "nexussw/lxd/driver/mixins/helpers/wait"
+require "nexussw/lxd/transport/rest"
 
 module NexusSW
   module LXD
@@ -25,7 +25,7 @@ module NexusSW
           include Helpers::WaitMixin
 
           def server_info
-            @server_info ||= api.get('/1.0')[:metadata]
+            @server_info ||= api.get("/1.0")[:metadata]
           end
 
           def transport_for(container_name)
@@ -46,22 +46,22 @@ module NexusSW
           end
 
           def start_container(container_id)
-            return if container_status(container_id) == 'running'
+            return if container_status(container_id) == "running"
             retry_forever do
               api.start_container(container_id, sync: false)
             end
-            wait_for_status container_id, 'running'
+            wait_for_status container_id, "running"
           end
 
           def stop_container(container_id, options = {})
-            return if container_status(container_id) == 'stopped'
+            return if container_status(container_id) == "stopped"
             if options[:force]
               api.stop_container(container_id, force: true)
             else
               last_id = nil
               use_last = false
               LXD.with_timeout_and_retries({ timeout: 0 }.merge(options)) do # timeout: 0 to enable retry functionality
-                return if container_status(container_id) == 'stopped'
+                return if container_status(container_id) == "stopped"
                 begin
                   unless use_last
                     # Keep resubmitting until the server complains (Stops will be ignored/hang if init is not yet listening for SIGPWR i.e. recently started)
@@ -75,12 +75,12 @@ module NexusSW
                   end
                   api.wait_for_operation last_id # , options[:retry_interval]
                 rescue Faraday::TimeoutError => e
-                  return if container_status(container_id) == 'stopped'
+                  return if container_status(container_id) == "stopped"
                   raise Timeout::Retry.new e # if options[:retry_interval] # rubocop:disable Style/RaiseArgs
                 end
               end
             end
-            wait_for_status container_id, 'stopped'
+            wait_for_status container_id, "stopped"
           end
 
           def delete_container(container_id)
@@ -107,7 +107,7 @@ module NexusSW
           end
 
           def container_state(container_id)
-            return nil unless container_status(container_id) == 'running' # Parity with CLI
+            return nil unless container_status(container_id) == "running" # Parity with CLI
             api.container_state(container_id)[:metadata]
           end
 
@@ -116,7 +116,7 @@ module NexusSW
           end
 
           def container_exists?(container_id)
-            api.containers[:metadata].map { |url| url.split('/').last }.include? container_id
+            api.containers[:metadata].map { |url| url.split("/").last }.include? container_id
           end
 
           protected

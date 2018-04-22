@@ -1,4 +1,4 @@
-require 'nexussw/lxd/rest_api/errors'
+require "nexussw/lxd/rest_api/errors"
 
 module NexusSW
   module LXD
@@ -42,7 +42,7 @@ module NexusSW
               options ||= {}
               return execute_chunked(command, options) if options[:capture] == false && !block_given?
 
-              capture_options = { stdout: '', stderr: '' }
+              capture_options = { stdout: "", stderr: "" }
               capture_options[:capture] = block if block_given?
               capture_options[:capture] ||= options[:capture] if options[:capture].respond_to? :call
               # capture_options[:capture] ||= options[:stream] if options[:stream].respond_to? :call

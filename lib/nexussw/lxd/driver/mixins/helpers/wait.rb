@@ -8,9 +8,9 @@ module NexusSW
               cc = driver.container(container_name)
               state = driver.container_state(container_name)
               cc[:expanded_devices].each do |nic, data|
-                next unless data[:type] == 'nic'
+                next unless data[:type] == "nic"
                 state[:network][nic][:addresses].each do |address|
-                  return address[:address] if address[:family] == 'inet' && address[:address] && !address[:address].empty?
+                  return address[:address] if address[:family] == "inet" && address[:address] && !address[:address].empty?
                 end
               end
               nil
@@ -22,11 +22,11 @@ module NexusSW
                   retval = nil
                   case what
                   when :cloud_init
-                    retval = !transport_for(container_name).execute('test -f /run/cloud-init/result.json').error?
+                    retval = !transport_for(container_name).execute("test -f /run/cloud-init/result.json").error?
                   when :ip
                     retval = check_for_ip(self, container_name)
                   else
-                    raise 'unrecognized option'
+                    raise "unrecognized option"
                   end
                   return retval if retval
                   sleep 0.5

@@ -1,5 +1,5 @@
-require 'nexussw/lxd/transport'
-require 'nexussw/lxd/transport/mixins/cli'
+require "nexussw/lxd/transport"
+require "nexussw/lxd/transport/mixins/cli"
 
 module NexusSW
   module LXD

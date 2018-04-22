@@ -1,10 +1,10 @@
-require 'nexussw/lxd/transport/mixins/helpers/execute'
-require 'nexussw/lxd/transport/mixins/helpers/users'
-require 'nexussw/lxd/transport/mixins/helpers/folder_txfr'
-require 'nio/websocket'
-require 'tempfile'
-require 'json'
-require 'shellwords'
+require "nexussw/lxd/transport/mixins/helpers/execute"
+require "nexussw/lxd/transport/mixins/helpers/users"
+require "nexussw/lxd/transport/mixins/helpers/folder_txfr"
+require "nio/websocket"
+require "tempfile"
+require "json"
+require "shellwords"
 
 module NexusSW
   module LXD
@@ -17,7 +17,7 @@ module NexusSW
             @rest_endpoint = config[:rest_endpoint]
             @driver_options = config[:driver_options]
             @api = config[:connection]
-            raise 'The rest transport requires the following keys: { :connection, :driver_options, :rest_endpoint }' unless @rest_endpoint && @api && @driver_options
+            raise "The rest transport requires the following keys: { :connection, :driver_options, :rest_endpoint }" unless @rest_endpoint && @api && @driver_options
           end
 
           attr_reader :api, :rest_endpoint, :container_name, :config
@@ -66,7 +66,7 @@ module NexusSW
             backchannel = nil
             getlogs = false
             command = runas_command(command, options)
-            if block_given? && (options[:capture] || !config[:info][:api_extensions].include?('container_exec_recording'))
+            if block_given? && (options[:capture] || !config[:info][:api_extensions].include?("container_exec_recording"))
               apiopts = { :'wait-for-websocket' => true, interactive: false, sync: false }
               apiopts[:interactive] = true if options[:capture] == :interactive
               retval = api.execute_command(container_name, command, apiopts)[:metadata]
@@ -74,16 +74,18 @@ module NexusSW
               backchannel = options[:capture] == :interactive ? ws_connect(opid, retval[:metadata][:fds]) : ws_connect(opid, retval[:metadata][:fds], &block)
 
               # patch for interactive session
-              return Helpers::ExecuteMixin::InteractiveResult.new(command, options, StdinStub.pipe(backchannel.waitlist[:'0']), backchannel).tap do |active|
-                backchannel.callback = proc do |stdout|
-                  active.send_output stdout
+              if options[:capture] == :interactive
+                return Helpers::ExecuteMixin::InteractiveResult.new(command, options, StdinStub.pipe(backchannel.waitlist[:'0']), backchannel).tap do |active|
+                  backchannel.callback = proc do |stdout|
+                    active.send_output stdout
+                  end
+                  yield active
+                  backchannel.exit if backchannel.respond_to? :exit
+                  retval = api.wait_for_operation opid
+                  active.exitstatus = retval[:metadata][:return].to_i
                 end
-                yield active
-                backchannel.exit if backchannel.respond_to? :exit
-                retval = api.wait_for_operation opid
-                active.exitstatus = retval[:metadata][:return].to_i
-              end if options[:capture] == :interactive
-            elsif block_given? && config[:info][:api_extensions].include?('container_exec_recording')
+              end
+            elsif block_given? && config[:info][:api_extensions].include?("container_exec_recording")
               getlogs = true
               retval = api.execute_command(container_name, command, :'record-output' => true, interactive: false, sync: false)
               opid = retval[:metadata][:id]
@@ -96,8 +98,8 @@ module NexusSW
                 backchannel.join if backchannel.respond_to? :join
                 if getlogs
                   begin
-                    stdout_log = retval[:metadata][:output][:'1'].split('/').last
-                    stderr_log = retval[:metadata][:output][:'2'].split('/').last
+                    stdout_log = retval[:metadata][:output][:'1'].split("/").last
+                    stderr_log = retval[:metadata][:output][:'2'].split("/").last
                     stdout = api.log container_name, stdout_log
                     stderr = api.log container_name, stderr_log
                     yield stdout, stderr
@@ -151,21 +153,25 @@ module NexusSW
                   waitlist.each { |_, v| v.close if v.respond_to? :close }
                 end
               end
-              waitlist[:'2'] = NIO::WebSocket.connect(baseurl + endpoints[:'2'], ws_options) do |driver|
-                driver.on :message do |ev|
-                  data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
-                  callback.call nil, data
+              if endpoints[:'2']
+                waitlist[:'2'] = NIO::WebSocket.connect(baseurl + endpoints[:'2'], ws_options) do |driver|
+                  driver.on :message do |ev|
+                    data = ev.data.is_a?(String) ? ev.data : ev.data.pack("U*")
+                    callback.call nil, data
+                  end
                 end
-              end if endpoints[:'2']
-              waitlist[:'1'] = NIO::WebSocket.connect(baseurl + endpoints[:'1'], ws_options) do |driver|
-                driver.on :message do |ev|
-                  data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
-                  callback.call data
+              end
+              if endpoints[:'1']
+                waitlist[:'1'] = NIO::WebSocket.connect(baseurl + endpoints[:'1'], ws_options) do |driver|
+                  driver.on :message do |ev|
+                    data = ev.data.is_a?(String) ? ev.data : ev.data.pack("U*")
+                    callback.call data
+                  end
                 end
-              end if endpoints[:'1']
+              end
               waitlist[:'0'] = NIO::WebSocket.connect(baseurl + endpoints[:'0'], ws_options) do |driver|
                 driver.on :message do |ev|
-                  data = ev.data.is_a?(String) ? ev.data : ev.data.pack('U*')
+                  data = ev.data.is_a?(String) ? ev.data : ev.data.pack("U*")
                   callback.call data
                 end
               end
@@ -198,21 +204,21 @@ module NexusSW
             end
 
             def window_resize(width, height)
-              send_control_msg 'window-resize', width: width.to_s, height: height.to_s
+              send_control_msg "window-resize", width: width.to_s, height: height.to_s
             end
 
             def signal(signum)
-              send_control_msg 'signal', signum
+              send_control_msg "signal", signum
             end
 
             private
 
             def send_control_msg(message, val)
               msg = {}.tap do |retval|
-                retval['command'] = message
+                retval["command"] = message
                 case message
-                when 'window-resize' then retval['args'] = val
-                when 'signal' then retval['signal'] = val.to_i
+                when "window-resize" then retval["args"] = val
+                when "signal" then retval["signal"] = val.to_i
                 end
               end.to_json
 
@@ -226,7 +232,7 @@ module NexusSW
             ws_options = { ssl_context: { verify_mode: verify_ssl } } unless verify_ssl.nil?
             ws_options ||= {}
             baseurl = rest_endpoint.sub(%r{^http([s]?://)}, 'ws\1')
-            baseurl += '/' unless baseurl.end_with? '/'
+            baseurl += "/" unless baseurl.end_with? "/"
             baseurl += "1.0/operations/#{opid}/websocket?secret="
 
             WSController.new ws_options, baseurl, endpoints, &block

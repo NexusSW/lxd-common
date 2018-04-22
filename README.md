@@ -134,7 +134,7 @@ The above is how you locate a base image for your new container.  The next optio
 option | default | notes
 ---|---|---
 :profiles | ['default'] | An ordered array of profiles to apply to your new container.  If you specify ANY profiles, and still want the 'default' profile applied, then you must explicitly include 'default' in your array
-:config | none | A Hash of configuration options to apply to this specific container.  Refer to LXD documentation for valid key value pairs.  https://github.com/lxc/lxd/blob/master/doc/containers.md
+:config | none | A Hash of configuration options to apply to this specific container.  Overrides configs specified within profiles.  Refer to LXD documentation for valid key value pairs.  https://github.com/lxc/lxd/blob/master/doc/containers.md
 :devices | | _\<coming soon>_  The Devices section in the above link will be allowed.
 
 ###### Examples
@@ -146,7 +146,7 @@ driver.create_container 'some-container', alias: 'ubuntu:18.04', \
     server: 'https://cloud-images.ubuntu.com/daily', protocol: 'simplestreams'
 ```
 
-more complex:
+more options:
 
 ```ruby
 driver.create_container 'dev-cattle-01', profiles: ['default', 'cattle'], \

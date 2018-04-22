@@ -1,5 +1,5 @@
-require 'zlib'
-require 'archive/tar/minitar'
+require "zlib"
+require "archive/tar/minitar"
 
 module NexusSW
   module LXD
@@ -17,8 +17,8 @@ module NexusSW
 
             def upload_files_individually(local_path, path)
               dest = File.join(path, File.basename(local_path))
-              execute('mkdir -p ' + dest).error! # for parity with tarball extract
-              Dir.entries(local_path).map { |f| (f == '.' || f == '..') ? nil : File.join(local_path, f) }.compact.each do |f|
+              execute("mkdir -p " + dest).error! # for parity with tarball extract
+              Dir.entries(local_path).map { |f| (f == "." || f == "..") ? nil : File.join(local_path, f) }.compact.each do |f|
                 upload_files_individually f, dest if File.directory? f
                 upload_file f, File.join(dest, File.basename(f)) if File.file? f
               end
@@ -44,12 +44,12 @@ module NexusSW
 
               return false unless can_archive?
               tfile = Transport.remote_tempname(container_name)
-              tarball_name = File.join Transport.local_tempdir, File.basename(tfile) + '.tgz'
+              tarball_name = File.join Transport.local_tempdir, File.basename(tfile) + ".tgz"
               execute("tar -czf #{tfile} -C #{File.dirname path} #{File.basename path}").error!
 
               download_file tfile, tarball_name
 
-              Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, 'rb')), local_path
+              Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, "rb")), local_path
               return true
             ensure
               if tarball_name
@@ -65,11 +65,11 @@ module NexusSW
                 tfile.close
                 Transport.chdir_mutex.synchronize do
                   Dir.chdir File.dirname(local_path) do
-                    Archive::Tar::Minitar.pack File.basename(local_path), Zlib::GzipWriter.new(File.open(tfile.path, 'wb'))
+                    Archive::Tar::Minitar.pack File.basename(local_path), Zlib::GzipWriter.new(File.open(tfile.path, "wb"))
                   end
                 end
                 # `tar -c#{flag}f #{tfile.path} -C #{File.dirname local_path} ./#{File.basename local_path}`
-                fname = '/tmp/' + File.basename(tfile.path) + '.tgz'
+                fname = "/tmp/" + File.basename(tfile.path) + ".tgz"
                 upload_file tfile.path, fname
 
                 execute("bash -c 'mkdir -p #{path} && cd #{path} && tar -xf #{fname} && rm -rf #{fname}'").error!

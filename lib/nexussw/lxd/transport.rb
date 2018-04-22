@@ -1,5 +1,5 @@
-require 'nexussw/lxd'
-require 'tempfile'
+require "nexussw/lxd"
+require "tempfile"
 
 module NexusSW
   module LXD
@@ -45,10 +45,10 @@ module NexusSW
       end
 
       def self.local_tempdir
-        return ENV['TEMP'] unless !ENV['TEMP'] || ENV['TEMP'].empty?
-        return ENV['TMP'] unless !ENV['TMP'] || ENV['TMP'].empty?
-        return ENV['TMPDIR'] unless !ENV['TMPDIR'] || ENV['TMPDIR'].empty?
-        '/tmp'
+        return ENV["TEMP"] unless !ENV["TEMP"] || ENV["TEMP"].empty?
+        return ENV["TMP"] unless !ENV["TMP"] || ENV["TMP"].empty?
+        return ENV["TMPDIR"] unless !ENV["TMPDIR"] || ENV["TMPDIR"].empty?
+        "/tmp"
       end
 
       def self.chdir_mutex

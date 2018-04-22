@@ -1,4 +1,4 @@
-require 'shellwords'
+require "shellwords"
 
 module NexusSW
   module LXD
@@ -8,7 +8,7 @@ module NexusSW
           module UsersMixin
             def user(user_nameorid, options = {})
               return unless user_nameorid
-              passwd = read_file options[:passwd_file] || '/etc/passwd'
+              passwd = read_file options[:passwd_file] || "/etc/passwd"
 
               # rework into .split(':') if this gets more complicated
               @uid = user_nameorid.is_a?(String) ? passwd[/^#{user_nameorid}:[^:]*:([^:]*):/, 1] : user_nameorid
@@ -33,7 +33,7 @@ module NexusSW
               uname = options[:runas] || username
               return command unless uname
               command = command.shelljoin if command.is_a? Array
-              ['su', uname, '-c', command]
+              ["su", uname, "-c", command]
             end
           end
         end

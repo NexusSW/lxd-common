@@ -1,9 +1,9 @@
-require 'support/mock_transport'
-require 'nio/websocket'
-require 'securerandom'
-require 'yaml'
-require 'tempfile'
-require 'shellwords'
+require "support/mock_transport"
+require "nio/websocket"
+require "securerandom"
+require "yaml"
+require "tempfile"
+require "shellwords"
 
 class NexusSW::LXD::RestAPI
   class Mock
@@ -17,7 +17,7 @@ class NexusSW::LXD::RestAPI
 
     def get(_endpoint)
       { metadata: {
-        api_extensions: ['container_exec_recording'],
+        api_extensions: ["container_exec_recording"],
       } }
     end
 
@@ -32,7 +32,7 @@ class NexusSW::LXD::RestAPI
     end
 
     def create_container(container_name, options)
-      image = container_name.include?('wontexist') ? 'idontexist' : 'ubuntu:lts'
+      image = container_name.include?("wontexist") ? "idontexist" : "ubuntu:lts"
       mock.execute("lxc launch #{image} #{container_name}").error!
       handle_async options
     end
@@ -57,7 +57,7 @@ class NexusSW::LXD::RestAPI
 
         def binary(_data)
           NIO::WebSocket::Reactor.queue_task do
-            callback.call '/'
+            callback.call "/"
           end
         end
       end
@@ -80,19 +80,23 @@ class NexusSW::LXD::RestAPI
         },
         return: res.exitstatus,
       }
-      metadata = {
-        fds: {
-          :'0' => res.stdout.to_s + res.stderr.to_s,
-        },
-        return: res.exitstatus,
-      } if options[:interactive]
-      metadata = {
-        output: {
-          :'1' => set_log(container_name, res.stdout),
-          :'2' => set_log(container_name, res.stderr),
-        },
-        return: res.exitstatus,
-      } if options[:'record-output']
+      if options[:interactive]
+        metadata = {
+          fds: {
+            :'0' => res.stdout.to_s + res.stderr.to_s,
+          },
+          return: res.exitstatus,
+        }
+      end
+      if options[:'record-output']
+        metadata = {
+          output: {
+            :'1' => set_log(container_name, res.stdout),
+            :'2' => set_log(container_name, res.stderr),
+          },
+          return: res.exitstatus,
+        }
+      end
       retval = handle_async(options)
       retval[:metadata][:metadata] = metadata
       merge_async_results retval
@@ -167,15 +171,15 @@ class NexusSW::LXD::RestAPI
       # @hk.container_state(container_id)['status_code'].to_i
       # 102	=> 'stopped',
       # 103	=> 'running',
-      json = ''
+      json = ""
       mock.execute "lxc list #{container_name}" do |stdout_chunk, _stderr_chunk|
         json += stdout_chunk
       end
-      { metadata: NexusSW::LXD.symbolize_keys(JSON.parse(json)[0]['state']) }
+      { metadata: NexusSW::LXD.symbolize_keys(JSON.parse(json)[0]["state"]) }
     end
 
     def container(container_name)
-      json = ''
+      json = ""
       mock.execute "lxc list #{container_name}" do |stdout_chunk|
         json += stdout_chunk
       end
@@ -183,8 +187,8 @@ class NexusSW::LXD::RestAPI
     end
 
     def containers
-      json = ''
-      mock.execute 'lxc list' do |stdout_chunk|
+      json = ""
+      mock.execute "lxc list" do |stdout_chunk|
         json += stdout_chunk
       end
       { metadata: JSON.parse(json).keys }

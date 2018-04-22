@@ -1,8 +1,8 @@
-require 'nexussw/lxd/transport/mixins/local'
-require 'nexussw/lxd/transport/mixins/helpers/users'
-require 'nexussw/lxd/transport/mixins/helpers/folder_txfr'
-require 'tempfile'
-require 'shellwords'
+require "nexussw/lxd/transport/mixins/local"
+require "nexussw/lxd/transport/mixins/helpers/users"
+require "nexussw/lxd/transport/mixins/helpers/folder_txfr"
+require "tempfile"
+require "shellwords"
 
 module NexusSW
   module LXD
@@ -38,7 +38,7 @@ module NexusSW
 
           def read_file(path)
             tfile = Transport.remote_tempname(container_name)
-            retval = execute("#{@container_name}#{path} #{tfile}", subcommand: 'file pull', capture: false)
+            retval = execute("#{@container_name}#{path} #{tfile}", subcommand: "file pull", capture: false)
             # return '' if retval.exitstatus == 1
             retval.error!
             return inner_transport.read_file tfile
@@ -59,7 +59,7 @@ module NexusSW
           def download_file(path, local_path)
             tfile = Transport.remote_tempname(container_name) if punt
             localname = tfile || local_path
-            execute("#{container_name}#{path} #{localname}", subcommand: 'file pull').error!
+            execute("#{container_name}#{path} #{localname}", subcommand: "file pull").error!
             inner_transport.download_file tfile, local_path if tfile
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
@@ -77,19 +77,19 @@ module NexusSW
           end
 
           def upload_folder(local_path, path)
-            return super unless config[:info] && config[:info]['api_extensions'] && config[:info]['api_extensions'].include?('directory_manipulation')
+            return super unless config[:info] && config[:info]["api_extensions"] && config[:info]["api_extensions"].include?("directory_manipulation")
 
-            execute("-r #{local_path} #{container_name}#{path}", subcommand: 'file push', capture: false).error!
+            execute("-r #{local_path} #{container_name}#{path}", subcommand: "file push", capture: false).error!
           end
 
           def download_folder(path, local_path, options = {})
-            return super unless config[:info] && config[:info]['api_extensions'] && config[:info]['api_extensions'].include?('directory_manipulation')
+            return super unless config[:info] && config[:info]["api_extensions"] && config[:info]["api_extensions"].include?("directory_manipulation")
 
-            execute("-r #{container_name}#{path} #{local_path}", subcommand: 'file pull', capture: false).error!
+            execute("-r #{container_name}#{path} #{local_path}", subcommand: "file pull", capture: false).error!
           end
 
           def add_remote(host_name)
-            execute("add #{host_name} --accept-certificate", subcommand: 'remote').error! unless remote? host_name
+            execute("add #{host_name} --accept-certificate", subcommand: "remote").error! unless remote? host_name
           end
 
           def linked_transport(host_name)
@@ -100,7 +100,7 @@ module NexusSW
           end
 
           def remote?(host_name)
-            result = execute 'list', subcommand: 'remote'
+            result = execute "list", subcommand: "remote"
             result.error!
             result.stdout.each_line do |line|
               return true if line.start_with? "| #{host_name} "
@@ -111,7 +111,7 @@ module NexusSW
           private
 
           def file_perms(options = {})
-            perms = ''
+            perms = ""
             perms += " --uid=#{options[:uid] || uid || 0}"
             perms += " --gid=#{options[:gid] || gid || 0}"
             fmode = options[:file_mode] || file_mode
