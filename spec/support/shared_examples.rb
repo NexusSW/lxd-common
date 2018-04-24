@@ -17,6 +17,11 @@ shared_examples "it can create containers" do
     expect(driver.container_status(name)).to eq("running")
   end
 
+  it "updates a container" do
+    results = driver.update_container(name, config: { "security.idmap.isolated" => true })
+    expect(results[:config]).to include("security.idmap.isolated" => true)
+  end
+
   it "detects an existing container" do
     expect(driver.container_exists?(name)).to be true
   end

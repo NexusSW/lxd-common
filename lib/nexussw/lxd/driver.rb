@@ -37,6 +37,10 @@ module NexusSW
         raise "#{self.class}#delete_container not implemented"
       end
 
+      def update_container(_container_name, _container_options)
+        raise "#{self.class}#update_container not implemented"
+      end
+
       def container_status(_container_id)
         raise "#{self.class}#container_status not implemented"
       end
