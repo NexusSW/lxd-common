@@ -87,19 +87,7 @@ module NexusSW
             return unless container_exists? container_id
             stop_container container_id, force: true
 
-            # ISSUE 17: something upstream is causing a double-tap on the REST endpoint
-
-            # trial return to normal
-            # begin
             api.delete_container container_id
-            # rescue ::Faraday::ConnectionFailed, ::NexusSW::LXD::RestAPI::Error::BadRequest
-            #   LXD.with_timeout_and_retries timeout: 120 do
-            #     loop do
-            #       return unless container_exists? container_id
-            #       sleep 0.3
-            #     end
-            #   end
-            # end
           end
 
           def container_status(container_id)

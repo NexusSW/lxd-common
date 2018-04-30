@@ -19,7 +19,8 @@ shared_examples "it can create containers" do
 
   it "updates a container" do
     results = driver.update_container(name, config: { "security.idmap.isolated" => true })
-    expect(results[:config]).to include("security.idmap.isolated" => true)
+    expect(results[:config]).to include(:"security.idmap.isolated" => true)
+    expect(results[:config]).to include(:"security.nesting" => true) # Ensure deep merge
   end
 
   it "detects an existing container" do

@@ -35,6 +35,62 @@ module NexusSW
             container_name
           end
 
+          def update_container(container_name, container_options)
+            raise NexusSW::LXD::RestAPI::Error::NotFound, "Container (#{container_name}) does not exist" unless container_exists? container_name
+            configs = container_options[:config]
+            devices = container_options[:devices]
+            profiles = container_options[:profiles]
+            existing = container(container_name)
+
+            if configs
+              configs.each do |k, v|
+                if v.nil?
+                  next unless existing[:config][k]
+                  inner_transport.execute("lxc config unset #{container_name} #{k}").error!
+                else
+                  next if existing[:config][k] == v
+                  inner_transport.execute("lxc config set #{container_name} #{k} #{v}").error!
+                end
+              end
+            end
+
+            if devices
+              devices.each do |name, device|
+                cmd = "add"
+                if device.nil?
+                  next unless existing[:devices].include? name
+                  inner_transport.execute("lxc config device remove #{container_name} #{name}").error!
+                  next
+                elsif existing[:devices].include?(name)
+                  cmd = "set"
+                  if existing[:devices][name][:type] != device[:type]
+                    inner_transport.execute("lxc config device remove #{container_name} #{name}").error!
+                    cmd = "add"
+                  end
+                end
+                if cmd == "add"
+                  cline = "lxc config device add #{container_name} #{name} #{device[:type]}"
+                  device.each do |k, v|
+                    cline << " #{k}=#{v}"
+                  end
+                  inner_transport.execute(cline).error!
+                else
+                  device.each do |k, v|
+                    next if k == :type
+                    next if v == existing[:devices][name][k]
+                    inner_transport.execute("lxc config device set #{container_name} #{name} #{k} #{v}").error!
+                  end
+                end
+              end
+            end
+
+            if profiles
+              inner_transport.execute("lxc profile assign #{container_name} #{profiles.join(",")}").error! unless profiles == existing[:profiles]
+            end
+
+            container container_name
+          end
+
           def start_container(container_id)
             return if container_status(container_id) == "running"
             inner_transport.execute("lxc start #{container_id}").error!
@@ -85,6 +141,18 @@ module NexusSW
             retval
           end
 
+          def convert_bools(oldhash)
+            {}.tap do |retval|
+              oldhash.each do |k, v|
+                retval[k] = case v
+                            when "true" then true
+                            when "false" then false
+                            else v.is_a?(Hash) ? convert_bools(v) : v
+                            end
+              end
+            end
+          end
+
           # YAML is not supported until somewhere in the feature branch
           #   the YAML return has :state and :container at the root level
           # the JSON return has no :container (:container is root)
@@ -103,7 +171,7 @@ module NexusSW
             res = inner_transport.execute("lxc list #{container_id} --format=json")
             res.error!
             JSON.parse(res.stdout).each do |c|
-              return convert_keys(c.reject { |k, _| k == "state" }) if c["name"] == container_id
+              return convert_bools(convert_keys(c.reject { |k, _| k == "state" })) if c["name"] == container_id
             end
             nil
           end
