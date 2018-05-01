@@ -86,8 +86,8 @@ module NexusSW
             end
           end
           raw = JSON.parse(response.body)
-          do_error raw["error_code"], raw["error"] if response.status >= 400
-          do_error raw["metadata"]["status_code"], raw["metadata"]["err"] if (raw["metadata"]["class"] == "task") && (raw["metadata"]["status_code"] >= 400)
+          do_error raw["error_code"].to_i, raw["error"] if response.status >= 400
+          do_error raw["metadata"]["status_code"].to_i, raw["metadata"]["err"] if (raw["metadata"]["class"] == "task") && (raw["metadata"]["status_code"].to_i >= 400)
           block_given? && !fileop ? yield(response) : LXD.symbolize_keys(raw)
         end
       end
