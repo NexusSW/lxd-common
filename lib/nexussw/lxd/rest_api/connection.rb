@@ -64,8 +64,12 @@ module NexusSW
           api_options[:verify_ssl].nil? ? true : api_options[:verify_ssl]
         end
 
-        def parse_response(response)
-          LXD.symbolize_keys(JSON.parse(response.body))
+        def do_error(code, message)
+          case code
+          when 404 then raise RestAPI::Error::NotFound, message
+          when 400 then raise RestAPI::Error::BadRequest, message
+          else raise RestAPI::Error, "Error #{code}: #{message}"
+          end
         end
 
         def send_request(verb, relative_url, content = nil)
@@ -81,15 +85,10 @@ module NexusSW
               fileop = true
             end
           end
-          if response.status >= 400
-            err = JSON.parse(response.body)
-            case err["error_code"]
-            when 404 then raise RestAPI::Error::NotFound, err["error"]
-            when 400 then raise RestAPI::Error::BadRequest, err["error"]
-            else raise RestAPI::Error, "Error #{err['error_code']}: #{err['error']}"
-            end
-          end
-          block_given? && !fileop ? yield(response) : parse_response(response)
+          raw = JSON.parse(response.body)
+          do_error raw["error_code"], raw["error"] if response.status >= 400
+          do_error raw["metadata"]["status_code"], raw["metadata"]["err"] if (raw["metadata"]["class"] == "task") && (raw["metadata"]["status_code"] >= 400)
+          block_given? && !fileop ? yield(response) : LXD.symbolize_keys(raw)
         end
       end
     end

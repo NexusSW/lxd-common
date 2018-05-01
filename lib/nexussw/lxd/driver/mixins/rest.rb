@@ -25,7 +25,7 @@ module NexusSW
           include Helpers::WaitMixin
 
           def server_info
-            @server_info ||= api.get("/1.0")[:metadata]
+            api.server_info
           end
 
           def transport_for(container_name)
@@ -43,6 +43,11 @@ module NexusSW
             end
             start_container container_name
             container_name
+          end
+
+          def update_container(container_name, container_options)
+            api.update_container(container_name, container_options)
+            container(container_name)
           end
 
           def start_container(container_id)
@@ -100,7 +105,7 @@ module NexusSW
           end
 
           def container(container_id)
-            api.container(container_id)[:metadata]
+            Driver.convert_bools api.container(container_id)[:metadata]
           end
 
           def container_exists?(container_id)

@@ -141,18 +141,6 @@ module NexusSW
             retval
           end
 
-          def convert_bools(oldhash)
-            {}.tap do |retval|
-              oldhash.each do |k, v|
-                retval[k] = case v
-                            when "true" then true
-                            when "false" then false
-                            else v.is_a?(Hash) ? convert_bools(v) : v
-                            end
-              end
-            end
-          end
-
           # YAML is not supported until somewhere in the feature branch
           #   the YAML return has :state and :container at the root level
           # the JSON return has no :container (:container is root)
@@ -171,7 +159,7 @@ module NexusSW
             res = inner_transport.execute("lxc list #{container_id} --format=json")
             res.error!
             JSON.parse(res.stdout).each do |c|
-              return convert_bools(convert_keys(c.reject { |k, _| k == "state" })) if c["name"] == container_id
+              return Driver.convert_bools(convert_keys(c.reject { |k, _| k == "state" })) if c["name"] == container_id
             end
             nil
           end

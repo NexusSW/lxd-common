@@ -15,10 +15,10 @@ class NexusSW::LXD::RestAPI
 
     attr_reader :mock
 
-    def get(_endpoint)
-      { metadata: {
-        api_extensions: ["container_exec_recording"],
-      } }
+    def server_info
+      {
+        api_extensions: %w{container_exec_recording patch},
+      }
     end
 
     def handle_async(options)
@@ -35,6 +35,12 @@ class NexusSW::LXD::RestAPI
       image = container_name.include?("wontexist") ? "idontexist" : "ubuntu:lts"
       mock.execute("lxc launch #{image} #{container_name}").error!
       handle_async options
+    end
+
+    def update_container(container_name, container_options)
+      container_options[:config].each do |k, v|
+        mock.execute("lxc config set #{container_name} #{k} #{v}").error!
+      end
     end
 
     class ::NexusSW::LXD::Transport::Rest

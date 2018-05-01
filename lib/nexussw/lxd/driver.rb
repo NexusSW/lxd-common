@@ -60,6 +60,18 @@ module NexusSW
       def transport_for(_container_name)
         raise "#{self.class}#transport_for not implemented"
       end
+
+      def self.convert_bools(oldhash)
+        {}.tap do |retval|
+          oldhash.each do |k, v|
+            retval[k] = case v
+                        when "true" then true
+                        when "false" then false
+                        else v.is_a?(Hash) ? convert_bools(v) : v
+                        end
+          end
+        end
+      end
     end
   end
 end
