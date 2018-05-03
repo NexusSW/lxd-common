@@ -37,6 +37,10 @@ module NexusSW
         raise "#{self.class}#delete_container not implemented"
       end
 
+      def update_container(_container_name, _container_options)
+        raise "#{self.class}#update_container not implemented"
+      end
+
       def container_status(_container_id)
         raise "#{self.class}#container_status not implemented"
       end
@@ -55,6 +59,18 @@ module NexusSW
 
       def transport_for(_container_name)
         raise "#{self.class}#transport_for not implemented"
+      end
+
+      def self.convert_bools(oldhash)
+        {}.tap do |retval|
+          oldhash.each do |k, v|
+            retval[k] = case v
+                        when "true" then true
+                        when "false" then false
+                        else v.is_a?(Hash) ? convert_bools(v) : v
+                        end
+          end
+        end
       end
     end
   end

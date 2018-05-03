@@ -65,6 +65,9 @@ module NexusSW
                 "type" => "nic",
               },
             },
+            "config" => {
+              "security.nesting" => "true",
+            },
           }
         end
 
@@ -99,6 +102,8 @@ module NexusSW
               when "launch"
                 exitstatus = 1 unless args[2].include? "ubuntu:"
                 @@containers[args[3]] = new_container(args[3]) if args[2].include? "ubuntu:"
+              when "config"
+                @@containers[args[3]]["config"][args[4]] = args[5]
               when "exec"
                 if options[:capture] == :interactive
                   stub = StdinStub.new(&block)

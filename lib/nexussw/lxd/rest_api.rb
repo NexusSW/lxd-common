@@ -11,10 +11,25 @@ module NexusSW
 
       include RestAPI::Connection
 
+      def server_info
+        @server_info ||= LXD.symbolize_keys(get("/1.0"))[:metadata]
+      end
+
       def create_container(container_name, options)
         options, sync = parse_options options
-        options[:config] = convert_bools(options[:config]) if options.key? :config
-        handle_async post("/1.0/containers", create_source(options).merge(name: container_name)), sync
+        handle_async post("/1.0/containers", RestAPI.convert_bools(create_source(options).merge(name: container_name))), sync
+      end
+
+      def update_container(container_name, container_options)
+        if can_patch?
+          patch "/1.0/containers/#{container_name}", RestAPI.convert_bools(container_options)
+        else
+          data = container(container_name)[:metadata].select { |k, _| [:config, :devices, :profiles].include? k }
+          data[:config].merge! container_options[:config] if container_options.key? :config
+          data[:devices].merge! container_options[:devices] if container_options.key? :devices
+          data[:profiles] = container_options[:profiles] if container_options.key? :profiles
+          handle_async put("/1.0/containers/#{container_name}", RestAPI.convert_bools(data)), true
+        end
       end
 
       def execute_command(container_name, command, options)
@@ -75,16 +90,7 @@ module NexusSW
       end
 
       def container(container_name)
-        exceptkeys = %w{config expanded_config}
-        get "/1.0/containers/#{container_name}" do |response|
-          retval = JSON.parse(response.body)
-          lift = retval["metadata"].select { |k, _| exceptkeys.include? k }
-          retval["metadata"].delete_if { |k, _| exceptkeys.include? k }
-          retval = LXD.symbolize_keys(retval)
-          retval[:metadata][:config] = lift["config"] if lift.key? "config"
-          retval[:metadata][:expanded_config] = lift["expanded_config"] if lift.key? "expanded_config"
-          return retval
-        end
+        get "/1.0/containers/#{container_name}"
       end
 
       def containers
@@ -95,9 +101,29 @@ module NexusSW
         get "/1.0/operations/#{operation_id}/wait"
       end
 
+      def self.convert_bools(hash)
+        {}.tap do |retval|
+          hash.each do |k, v|
+            if [:ephemeral, :stateful].include? k
+              retval[k] = v
+            else
+              retval[k] = case v
+                          when true then "true"
+                          when false then "false"
+                          else v.is_a?(Hash) && ([:config, :devices].include?(k)) ? convert_bools(v) : v
+                          end
+            end
+          end
+        end
+      end
+
       private
 
       attr_reader :api_options
+
+      def can_patch?
+        server_info[:api_extensions].include? "patch"
+      end
 
       def handle_async(data, sync)
         return data if sync == false
@@ -114,18 +140,6 @@ module NexusSW
         options.dup.tap do |retval|
           retval[:source] = { type: "image", mode: "pull" }.merge(retval.select { |k, _| moveprops.include? k }) unless retval.key? :source
           retval.delete_if { |k, _| moveprops.include? k }
-        end
-      end
-
-      def convert_bools(hash)
-        {}.tap do |retval|
-          hash.each do |k, v|
-            retval[k] = case v
-                        when true then "true"
-                        when false then "false"
-                        else v.is_a?(Hash) ? convert_bools(v) : v
-                        end
-          end
         end
       end
     end

@@ -108,6 +108,7 @@ Here are some of the things that you can do while talking to an LXD host:  (driv
 method name | parameters | options | notes
 ---|---|---|---
 create_container | container_name | _see next section_ | _see next section_
+update_container | container_name | _see next section_ | _see next section_
 start_container | container_name
 stop_container | container_name | force: false<br />timeout: 0<br />retry_interval:&nbsp;_unset_<br />retry_count:&nbsp;_unset_ | the default behavior is no force, no timeout, and no retries.  This is analogous to sending a SIGPWR to the init system within the container and waiting for a graceful shutdown.  Specifying `force: true` instead sends a SIGKILL to the container
 delete_container | container_name | | This will force stop the container, if it is currently running, prior to deleting.  If you need a graceful shutdown, send the stop_container command on your own.
@@ -117,9 +118,9 @@ container_state | container_name | | returns various runtime info regarding the 
 wait_for | container_name,<br />what,<br />timeout = 60 | | 'what' currently supports `:ip`, and `:cloud_init`.  After container start, calling this method will wait for an IP to be assigned, or for cloud-init to complete, respectively
 transport_for | container_name | | returns a transport used to communicate directly with a container.  Note that the container itself does not need to be directly routable.  If you have access to the host, then this transport will just plain work.
 
-##### Driver.create_container
+##### Driver.create_container and Driver.update_container
 
-Source image options:  (one of alias, fingerprint, properties MUST be specified)
+_(Create only)_ Source image options:  (one of alias, fingerprint, properties MUST be specified)
 
 option | default | notes
 ---|---|---
@@ -137,6 +138,8 @@ option | default | notes
 :config | none | A Hash of configuration options to apply to this specific container.  Overrides configs specified within profiles.  Refer to LXD documentation for valid key value pairs.  https://github.com/lxc/lxd/blob/master/doc/containers.md
 :devices | | _\<coming soon>_  The Devices section in the above link will be allowed.
 
+In the case of `update_container`, we will merely apply any options that are sent.  If you wish to unset a configuration key, call update_container with an opposing value for that key.
+
 ###### Examples
 
 minimum:
@@ -153,6 +156,12 @@ driver.create_container 'dev-cattle-01', profiles: ['default', 'cattle'], \
     config: { 'security.nesting': true, 'security.privileged': true }, \
     server: 'https://images.linuxcontainers.org', protocol: 'simplestreams', \
     alias: 'ubuntu/bionic'
+```
+
+```ruby
+driver.update_container 'dev-cattle-01', \
+    config: { 'security.nesting': false, 'security.privileged': false, \
+              'security.idmap.isolated': true }, \
 ```
 
 ### Transports
