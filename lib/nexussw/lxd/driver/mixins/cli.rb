@@ -127,20 +127,6 @@ module NexusSW
             STATUS_CODES[container(container_id)[:status_code].to_i]
           end
 
-          def convert_keys(oldhash)
-            return oldhash unless oldhash.is_a?(Hash) || oldhash.is_a?(Array)
-            retval = {}
-            if oldhash.is_a? Array
-              retval = []
-              oldhash.each { |v| retval << convert_keys(v) }
-            else
-              oldhash.each do |k, v|
-                retval[k.to_sym] = convert_keys(v)
-              end
-            end
-            retval
-          end
-
           # YAML is not supported until somewhere in the feature branch
           #   the YAML return has :state and :container at the root level
           # the JSON return has no :container (:container is root)
@@ -150,7 +136,7 @@ module NexusSW
             res = inner_transport.execute("lxc list #{container_id} --format=json")
             res.error!
             JSON.parse(res.stdout).each do |c|
-              return convert_keys(c["state"]) if c["name"] == container_id
+              return LXD.symbolize_keys(c["state"]) if c["name"] == container_id
             end
             nil
           end
@@ -159,7 +145,7 @@ module NexusSW
             res = inner_transport.execute("lxc list #{container_id} --format=json")
             res.error!
             JSON.parse(res.stdout).each do |c|
-              return Driver.convert_bools(convert_keys(c.reject { |k, _| k == "state" })) if c["name"] == container_id
+              return Driver.convert_bools(LXD.symbolize_keys(c.reject { |k, _| k == "state" })) if c["name"] == container_id
             end
             nil
           end

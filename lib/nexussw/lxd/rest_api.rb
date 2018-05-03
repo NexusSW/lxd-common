@@ -12,7 +12,7 @@ module NexusSW
       include RestAPI::Connection
 
       def server_info
-        @server_info ||= get("/1.0")[:metadata]
+        @server_info ||= LXD.symbolize_keys(get("/1.0"))[:metadata]
       end
 
       def create_container(container_name, options)
@@ -90,16 +90,7 @@ module NexusSW
       end
 
       def container(container_name)
-        exceptkeys = %w{config expanded_config}
-        get "/1.0/containers/#{container_name}" do |response|
-          retval = JSON.parse(response.body)
-          lift = retval["metadata"].select { |k, _| exceptkeys.include? k }
-          retval["metadata"].delete_if { |k, _| exceptkeys.include? k }
-          retval = LXD.symbolize_keys(retval)
-          retval[:metadata][:config] = lift["config"] if lift.key? "config"
-          retval[:metadata][:expanded_config] = lift["expanded_config"] if lift.key? "expanded_config"
-          return retval
-        end
+        get "/1.0/containers/#{container_name}"
       end
 
       def containers
