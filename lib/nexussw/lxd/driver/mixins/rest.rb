@@ -33,15 +33,16 @@ module NexusSW
           end
 
           def create_container(container_name, container_options = {})
+            autostart = (container_options.delete(:autostart) != false)
             if container_exists?(container_name)
-              start_container container_name # Start the container for Parity with the CLI
+              start_container(container_name) if autostart
               return container_name
             end
             # parity note: CLI will run indefinitely rather than timeout hence the 0 timeout
             retry_forever do
               api.create_container(container_name, container_options.merge(sync: false))
             end
-            start_container container_name
+            start_container(container_name) if autostart
             container_name
           end
 
