@@ -129,6 +129,7 @@ option | default | notes
 :alias | none | server dependant.  e.g. `ubuntu:16.04` or `ubuntu/xenial`.  Refer to the image catalog of each server for valid values.
 :fingerprint | none | partial matches accepted.  Each individual image gets a fingerprint.
 :properties | none | A Hash with image search parameters.  Refer to LXD documentation for valid key value pairs.  (Use of :properties is discouraged due to its non-deterministic nature)
+:autostart | true | Start the container immediately upon creation.  This is *_not_* the same as config["boot.autostart"]
 
 The above is how you locate a base image for your new container.  The next options allow you to specify last minute configuration details.
 

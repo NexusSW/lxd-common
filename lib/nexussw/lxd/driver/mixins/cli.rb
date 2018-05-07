@@ -21,8 +21,9 @@ module NexusSW
           end
 
           def create_container(container_name, container_options = {})
+            autostart = (container_options.delete(:autostart) != false)
             if container_exists? container_name
-              start_container container_name # Start for Parity with the below logic (`lxc launch` auto starts)
+              start_container(container_name) if autostart
               return container_name
             end
             cline = "lxc launch #{image_alias(container_options)} #{container_name}"
@@ -30,8 +31,12 @@ module NexusSW
             profiles.each { |p| cline += " -p #{p}" }
             configs = container_options[:config] || {}
             configs.each { |k, v| cline += " -c #{k}=#{v}" }
+            unless autostart # append to the cline to avoid potential lag between create & stop
+              cline += " && lxc stop -f #{container_name}"
+              cline = ["sh", "-c", cline] # There's no guarantee that inner_transport is running a shell for the && operator
+            end
             inner_transport.execute(cline).error!
-            wait_for_status container_name, "running"
+            wait_for_status container_name, "running" if autostart
             container_name
           end
 
