@@ -31,12 +31,17 @@ module NexusSW
             profiles.each { |p| cline += " -p #{p}" }
             configs = container_options[:config] || {}
             configs.each { |k, v| cline += " -c #{k}=#{v}" }
-            unless autostart # append to the cline to avoid potential lag between create & stop
+            if !autostart || container_options[:devices] # append to the cline to avoid potential lag between create & stop
               cline += " && lxc stop -f #{container_name}"
               cline = ["sh", "-c", cline] # There's no guarantee that inner_transport is running a shell for the && operator
             end
             inner_transport.execute(cline).error!
-            wait_for_status container_name, "running" if autostart
+            if container_options[:devices]
+              update_container(container_name, devices: container_options[:devices])
+              start_container(container_name) if autostart
+            else
+              wait_for_status container_name, "running" if autostart
+            end
             container_name
           end
 

@@ -137,7 +137,7 @@ option | default | notes
 ---|---|---
 :profiles | ['default'] | An ordered array of profiles to apply to your new container.  If you specify ANY profiles, and still want the 'default' profile applied, then you must explicitly include 'default' in your array
 :config | none | A Hash of configuration options to apply to this specific container.  Overrides configs specified within profiles.  Refer to LXD documentation for valid key value pairs.  https://github.com/lxc/lxd/blob/master/doc/containers.md
-:devices | | _\<coming soon>_  The Devices section in the above link will be allowed.
+:devices | | Refer to the above link for supported device types and options
 
 In the case of `update_container`, we will merely apply any options that are sent.  If you wish to unset a configuration key, call update_container with an opposing value for that key.
 
