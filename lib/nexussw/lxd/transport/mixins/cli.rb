@@ -79,13 +79,23 @@ module NexusSW
           def upload_folder(local_path, path)
             return super unless config[:info] && config[:info]["api_extensions"] && config[:info]["api_extensions"].include?("directory_manipulation")
 
-            execute("-r #{local_path} #{container_name}#{path}", subcommand: "file push").error!
+            tfile = Transport.remote_tempname(container_name) if punt
+            localname = tfile || local_path
+            inner_transport.upload_folder(local_path, tfile) if tfile
+            execute("-r #{localname} #{container_name}#{path}", subcommand: "file push").error!
+          ensure
+            inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
 
           def download_folder(path, local_path, options = {})
             return super unless config[:info] && config[:info]["api_extensions"] && config[:info]["api_extensions"].include?("directory_manipulation")
 
-            execute("-r #{container_name}#{path} #{local_path}", subcommand: "file pull").error!
+            tfile = Transport.remote_tempname(container_name) if punt
+            localname = tfile || local_path
+            execute("-r #{container_name}#{path} #{localname}", subcommand: "file pull").error!
+            inner_transport.download_folder(tfile, local_path) if tfile
+          ensure
+            inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
 
           def add_remote(host_name)
