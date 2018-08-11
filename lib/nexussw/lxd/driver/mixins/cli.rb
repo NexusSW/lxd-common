@@ -168,7 +168,7 @@ module NexusSW
             false
           end
 
-          def image
+          def images
             @images ||= Images::CLI.new(self)
           end
 

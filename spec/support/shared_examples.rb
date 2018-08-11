@@ -121,3 +121,71 @@ shared_examples "it can teardown a container" do
     expect(driver.container_exists?(name)).to be false
   end
 end
+
+=begin
+create from container
+export
+download
+save (to file)
+delete
+=end
+shared_examples "it can manage images" do
+
+  let(:image_name) { "image-from-#{name}" }
+  let(:image_file) { Dir.pwd + "/image-testfile-#{name}" }
+  let(:remote_image_name) { "remote-image-from-#{base_name}" }
+
+  it "can create an image from a container" do
+    driver.stop_container name, force: true
+    expect(driver.images.create_from(name, aliases: [{name: image_name}])).to have_key(:aliases)
+    driver.start_container name
+  end
+
+  it "can export an image to a file" do
+    driver.images[image_name].save(image_file)
+    expect(File.exist?(image_file) && !File.zero?(image_file)).to be true
+  end
+
+  # covering REST#download
+  it "can import an image from a file" do
+    driver.images.download "file://" + image_file, aliases: [{name: remote_image_name}]
+    expect(driver.images[remote_image_name].exist?).to be true
+  end
+
+  # covering REST being the destination of #export
+end
+
+# this is run on a nested container
+# any commands sent to the nested container will still need tested in another context (to ensure the rest driver is covered)
+shared_examples "it can transfer images" do
+  let(:image_name) { "image-from-#{base_name}" }
+  let(:image_file) { Dir.pwd + "/image-testfile-#{base_name}" }
+  let(:remote_image_name) { "remote-image-from-#{base_name}" }
+
+  it "can export an image to another lxd host" do
+    base_driver.images[image_name].export(driver)
+    expect(driver.images[image_name].exist?).to be true
+  end
+
+  it "can download a remote image" do
+    transport.upload_file image_file, "/tmp/imagefile"
+    url = "file:///tmp/imagefile" # are file url's supported by lxd?
+    driver.images.download url, aliases: [{name: remote_image_name}]
+    expect(driver.images[remote_image_name].exist?).to be true
+  end
+end
+
+shared_examples "it can delete images" do
+  let(:image_name) { "image-from-#{name}" }
+  let(:image_file) { Dir.pwd + "/image-testfile-#{name}" }
+  let(:remote_image_name) { "remote-image-from-#{name}" }
+
+  File.delete image_file
+
+  it "can delete images" do
+    driver.images[image_name].delete
+    driver.images[remote_image_name].delete
+    expect(driver.images[image_name].exist?).to be false
+    expect(driver.images[remote_image_name].exist?).to be false
+  end
+end

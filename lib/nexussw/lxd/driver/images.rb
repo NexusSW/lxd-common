@@ -9,27 +9,31 @@ module NexusSW
   module LXD
     class Driver
       class Images
-        def [](name_or_fingerprint)
-          handlers[name_or_fingerprint] ||= handler_for(name_or_fingerprint)
+        def [](alias_or_fingerprint)
+          fingerprint = map_alias(alias_or_fingerprint)
+          raise RestAPI::Error::NotFound, "Image alias (#{alias_or_fingerprint}) not found" unless fingerprint
+          handlers[fingerprint] ||= handler_for(fingerprint)
         end
 
-        def import(source, options = {})
-          raise "#{self.class}#import not implemented"
-        end
-
-        # allow file:// url's for http post, or otherwise submit url to server for download
+        # caller may/must supply metadata if any is desired.  the source has no info
+        # if a file:// url is used, it refers locally
         def download(source, options = {})
           raise "#{self.class}#download not implemented"
         end
 
+        # create from an existing container
         def create_from(container_name, options = {})
           raise "#{self.class}#create_from not implemented"
         end
 
         protected
 
-        def handler_for(name_or_fingerprint)
+        def handler_for(alias_or_fingerprint)
           raise "#{self.class}#handler_for not implemented"
+        end
+
+        def map_alias(alias_or_fingerprint)
+          raise "#{self.class}#map_alias not implemented"
         end
 
         private
@@ -39,16 +43,26 @@ module NexusSW
         end
 
         class ImageHandler
-          def export(options = {})
+          # export, with metadata, to the specified host
+          def export(destination, options = {})
             raise "#{self.class}#export not implemented"
           end
 
+          # export to a file or stream
           def save(filename, options = {})
             raise "#{self.class}#save not implemented"
           end
 
+          def refresh(filename, options = {})
+            raise "#{self.class}#refresh not implemented"
+          end
+
           def delete
             raise "#{self.class}#delete not implemented"
+          end
+
+          def exist?
+            raise "#{self.class}#exist? not implemented"
           end
         end
       end

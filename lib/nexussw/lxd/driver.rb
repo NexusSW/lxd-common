@@ -66,8 +66,8 @@ module NexusSW
       # - driver.image[image_alias_or_fingerprint].export(...)
       # - driver.image[image_alias_or_fingerprint].info(...) # <-- get and set
 
-      def image
-        raise "#{self.class}#image not implemented"
+      def images
+        raise "#{self.class}#images not implemented"
       end
 
       def self.convert_bools(oldhash)

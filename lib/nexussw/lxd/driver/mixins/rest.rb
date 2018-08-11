@@ -114,7 +114,7 @@ module NexusSW
             api.containers[:metadata].map { |url| url.split("/").last }.include? container_id
           end
 
-          def image
+          def images
             @images ||= Images::Rest.new(self)
           end
 
