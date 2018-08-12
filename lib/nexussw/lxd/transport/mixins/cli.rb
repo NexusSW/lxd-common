@@ -85,7 +85,7 @@ module NexusSW
               puntname = File.join(tfile, File.basename(local_path))
               inner_transport.upload_folder(local_path, tfile)
             end
-            execute("#{puntname} #{container_name}#{path}", subcommand: "file push -r").error!
+            execute("#{puntname} #{container_name}#{path}", subcommand: "file push -r", capture: false).error!
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
@@ -98,7 +98,7 @@ module NexusSW
               tfile = Transport.remote_tempname(container_name)
               puntname = File.join(tfile, File.basename(path))
             end
-            execute("#{container_name}#{path} #{tfile || local_path}", subcommand: "file pull -r").error!
+            execute("#{container_name}#{path} #{tfile || local_path}", subcommand: "file pull -r", capture: false).error!
             inner_transport.download_folder(puntname, local_path) if punt
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
