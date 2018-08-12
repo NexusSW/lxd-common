@@ -79,13 +79,13 @@ module NexusSW
           def upload_folder(local_path, path)
             return super unless config[:info] && config[:info]["api_extensions"] && config[:info]["api_extensions"].include?("directory_manipulation")
 
-            localname = local_path
+            puntname = local_path
             if punt
               tfile = Transport.remote_tempname(container_name)
-              localname = File.join(tfile, File.basename(local_path))
+              puntname = File.join(tfile, File.basename(local_path))
               inner_transport.upload_folder(local_path, tfile)
             end
-            execute("-r #{localname} #{container_name}#{path}", subcommand: "file push").error!
+            execute("#{puntname} #{container_name}#{path}", subcommand: "file push -r").error!
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
@@ -93,10 +93,13 @@ module NexusSW
           def download_folder(path, local_path, options = {})
             return super unless config[:info] && config[:info]["api_extensions"] && config[:info]["api_extensions"].include?("directory_manipulation")
 
-            tfile = Transport.remote_tempname(container_name) if punt
-            localname = tfile || local_path
-            execute("-r #{container_name}#{path} #{localname}", subcommand: "file pull").error!
-            inner_transport.download_folder(tfile, local_path) if tfile
+            puntname = local_path
+            if punt
+              tfile = Transport.remote_tempname(container_name)
+              puntname = File.join(tfile, File.basename(path))
+            end
+            execute("#{container_name}#{path} #{tfile || local_path}", subcommand: "file pull -r").error!
+            inner_transport.download_folder(puntname, local_path) if punt
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end
