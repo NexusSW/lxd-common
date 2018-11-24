@@ -44,7 +44,7 @@ shared_examples "Transport Functions" do
 
   it "can execute a command in a container" do
     # expect { transport.execute(['ls', '-al', '/']).error! }.not_to raise_error
-    expect(transport.execute(["ls", "-al", "/"]).error!.stdout.length).to satisfy { |l| l > 0 }
+    expect(transport.execute(["ls", "-al", "/"]).error!.stdout.length).to(satisfy { |l| l > 0 })
   end
 
   it "can execute a command interactively" do
@@ -58,29 +58,29 @@ shared_examples "Transport Functions" do
         sleep 1
       end.error!
     end.not_to raise_error
-    expect(data.length).to satisfy { |l| l > 0 }
+    expect(data.length).to(satisfy { |l| l > 0 })
     expect(data.lines).to include(/ home[\r]?$/)
   end
 
   it "can output to a file" do
-    expect { transport.write_file("/root/rspec.tmp", File.read(".rspec")) }.not_to raise_error
-    expect(transport.read_file("/root/rspec.tmp")).to eq(File.read(".rspec"))
+    expect { transport.write_file("/tmp/rspec.tmp", File.read(".rspec")) }.not_to raise_error
+    expect(transport.read_file("/tmp/rspec.tmp")).to eq(File.read(".rspec"))
   end
 
   it "can upload a file" do
-    expect { transport.upload_file(".rspec", "/root/rspec2.tmp") }.not_to raise_error
-    expect(transport.read_file("/root/rspec2.tmp")).to eq(File.read(".rspec"))
+    expect { transport.upload_file(".rspec", "/tmp/rspec2.tmp") }.not_to raise_error
+    expect(transport.read_file("/tmp/rspec2.tmp")).to eq(File.read(".rspec"))
   end
 
   it "can upload a folder" do
-    expect { transport.upload_folder("spec", "/root") }.not_to raise_error
-    expect(transport.read_file("/root/spec/support/shared_contexts.rb")).to eq(File.read("spec/support/shared_contexts.rb"))
+    expect { transport.upload_folder("spec", "/tmp") }.not_to raise_error
+    expect(transport.read_file("/tmp/spec/support/shared_contexts.rb")).to eq(File.read("spec/support/shared_contexts.rb"))
   end
 
   it "can download a folder" do
     begin
       localname = File.join(::NexusSW::LXD::Transport.local_tempdir, "spec")
-      expect { transport.download_folder("/root/spec", File.dirname(localname)) }.not_to raise_error
+      expect { transport.download_folder("/tmp/spec", File.dirname(localname)) }.not_to raise_error
       expect(File.read(File.join(localname, "support/shared_contexts.rb"))).to eq(File.read("spec/support/shared_contexts.rb"))
     ensure
       FileUtils.rm_rf localname, secure: true
@@ -91,13 +91,13 @@ shared_examples "Transport Functions" do
   begin
     tfile.close
     it "can download a file" do
-      expect { transport.download_file("/root/rspec2.tmp", tfile.path) }.not_to raise_error
+      expect { transport.download_file("/tmp/rspec2.tmp", tfile.path) }.not_to raise_error
       expect(File.read(tfile.path)).to eq(File.read(".rspec"))
     end
 
     it "can read a file" do
-      expect(transport.read_file("/root/rspec.tmp")).to eq(File.read(tfile.path))
-      expect(transport.read_file("/root/rspec2.tmp")).to eq(File.read(".rspec"))
+      expect(transport.read_file("/tmp/rspec.tmp")).to eq(File.read(tfile.path))
+      expect(transport.read_file("/tmp/rspec2.tmp")).to eq(File.read(".rspec"))
     end
     # don't unlink or tfile.path gets nil'd out before the capture - just let it fall out of scope
     # ensure

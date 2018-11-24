@@ -81,15 +81,15 @@ class NexusSW::LXD::RestAPI
       # retval[:metadata][:fds][:'1']
       metadata = {
         fds: {
-          :'1' => res.stdout,
-          :'2' => res.stderr,
+          '1': res.stdout,
+          '2': res.stderr,
         },
         return: res.exitstatus,
       }
       if options[:interactive]
         metadata = {
           fds: {
-            :'0' => res.stdout.to_s + res.stderr.to_s,
+            '0': res.stdout.to_s + res.stderr.to_s,
           },
           return: res.exitstatus,
         }
@@ -97,8 +97,8 @@ class NexusSW::LXD::RestAPI
       if options[:'record-output']
         metadata = {
           output: {
-            :'1' => set_log(container_name, res.stdout),
-            :'2' => set_log(container_name, res.stderr),
+            '1': set_log(container_name, res.stdout),
+            '2': set_log(container_name, res.stderr),
           },
           return: res.exitstatus,
         }
@@ -175,8 +175,8 @@ class NexusSW::LXD::RestAPI
 
     def container_state(container_name)
       # @hk.container_state(container_id)['status_code'].to_i
-      # 102	=> 'stopped',
-      # 103	=> 'running',
+      # 102  => 'stopped',
+      # 103  => 'running',
       json = ""
       mock.execute "lxc list #{container_name}" do |stdout_chunk, _stderr_chunk|
         json += stdout_chunk
