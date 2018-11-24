@@ -146,11 +146,13 @@ module NexusSW
               waitlist[:control] = NIO::WebSocket.connect(baseurl + endpoints[:control], ws_options) do |driver|
                 driver.on :io_error do # usually I get an EOF
                   @closed = true
-                  waitlist.each { |_, v| v.close if v.respond_to? :close }
+                  # waitlist.each { |_, v| v.close if v.respond_to? :close }
+                  waitlist[:'0'].close
                 end
                 driver.on :close do # but on occasion I get a legit close
                   @closed = true
-                  waitlist.each { |_, v| v.close if v.respond_to? :close }
+                  # waitlist.each { |_, v| v.close if v.respond_to? :close }
+                  waitlist[:'0'].close
                 end
               end
               if endpoints[:'2']
