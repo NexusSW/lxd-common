@@ -54,10 +54,10 @@ module NexusSW
             def self.read(monitor)
               monitor.io.read_nonblock(16384)
             rescue IO::WaitReadable # rubocop:disable Lint/ShadowedException
-              return nil
+              nil
             rescue Errno::ECONNRESET, EOFError, IOError
               monitor.close
-              return nil
+              nil
             end
           end
 
@@ -67,7 +67,7 @@ module NexusSW
             getlogs = false
             command = runas_command(command, options)
             if block_given? && (options[:capture] || !config[:info][:api_extensions].include?("container_exec_recording"))
-              apiopts = { :'wait-for-websocket' => true, interactive: false, sync: false }
+              apiopts = { 'wait-for-websocket': true, interactive: false, sync: false }
               apiopts[:interactive] = true if options[:capture] == :interactive
               retval = api.execute_command(container_name, command, apiopts)[:metadata]
               opid = retval[:id]
@@ -87,7 +87,7 @@ module NexusSW
               end
             elsif block_given? && config[:info][:api_extensions].include?("container_exec_recording")
               getlogs = true
-              retval = api.execute_command(container_name, command, :'record-output' => true, interactive: false, sync: false)
+              retval = api.execute_command(container_name, command, 'record-output': true, interactive: false, sync: false)
               opid = retval[:metadata][:id]
             else
               opid = api.execute_command(container_name, command, sync: false)[:metadata][:id]

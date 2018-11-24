@@ -70,10 +70,10 @@ module NexusSW
           def read(monitor)
             monitor.io.read_nonblock(16384)
           rescue IO::WaitReadable # rubocop:disable Lint/ShadowedException
-            return nil
+            nil
           rescue Errno::ECONNRESET, EOFError, IOError
             monitor.close
-            return nil
+            nil
           end
 
           def chunk_callback(stdout, stderr = nil)

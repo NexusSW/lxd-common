@@ -162,7 +162,7 @@ module NexusSW
 
           def container_exists?(container_id)
             return true if container_status(container_id)
-            return false
+            false
           rescue
             false
           end
