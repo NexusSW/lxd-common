@@ -50,7 +50,7 @@ module NexusSW
               download_file tfile, tarball_name
 
               Archive::Tar::Minitar.unpack Zlib::GzipReader.new(File.open(tarball_name, "rb")), local_path
-              return true
+              true
             ensure
               if tarball_name
                 File.delete tarball_name if File.exist? tarball_name

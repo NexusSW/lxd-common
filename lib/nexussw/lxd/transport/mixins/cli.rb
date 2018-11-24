@@ -41,7 +41,7 @@ module NexusSW
             retval = execute("#{@container_name}#{path} #{tfile}", subcommand: "file pull", capture: false)
             # return '' if retval.exitstatus == 1
             retval.error!
-            return inner_transport.read_file tfile
+            inner_transport.read_file tfile
           ensure
             inner_transport.execute("rm -rf #{tfile}", capture: false) if tfile
           end

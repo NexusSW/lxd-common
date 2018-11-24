@@ -44,7 +44,7 @@ shared_examples "Transport Functions" do
 
   it "can execute a command in a container" do
     # expect { transport.execute(['ls', '-al', '/']).error! }.not_to raise_error
-    expect(transport.execute(["ls", "-al", "/"]).error!.stdout.length).to satisfy { |l| l > 0 }
+    expect(transport.execute(["ls", "-al", "/"]).error!.stdout.length).to(satisfy { |l| l > 0 })
   end
 
   it "can execute a command interactively" do
@@ -58,7 +58,7 @@ shared_examples "Transport Functions" do
         sleep 1
       end.error!
     end.not_to raise_error
-    expect(data.length).to satisfy { |l| l > 0 }
+    expect(data.length).to(satisfy { |l| l > 0 })
     expect(data.lines).to include(/ home[\r]?$/)
   end
 
