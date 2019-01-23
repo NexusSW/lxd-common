@@ -96,6 +96,7 @@ module NexusSW
               begin
                 retval = api.wait_for_operation(opid)[:metadata]
                 backchannel.waitlist[:'0'].close if backchannel.respond_to? :waitlist
+                backchannel.waitlist[:control].close if backchannel.respond_to? :waitlist
                 backchannel.join if backchannel.respond_to? :join
                 if getlogs
                   begin
