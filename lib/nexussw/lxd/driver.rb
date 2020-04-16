@@ -61,6 +61,15 @@ module NexusSW
         raise "#{self.class}#transport_for not implemented"
       end
 
+      # Image examples:
+      # - driver.image.import(...)
+      # - driver.image[image_alias_or_fingerprint].export(...)
+      # - driver.image[image_alias_or_fingerprint].info(...) # <-- get and set
+
+      def images
+        raise "#{self.class}#images not implemented"
+      end
+
       def self.convert_bools(oldhash)
         {}.tap do |retval|
           oldhash.each do |k, v|

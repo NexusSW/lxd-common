@@ -1,5 +1,6 @@
 require "nexussw/lxd/rest_api"
 require "nexussw/lxd/driver/mixins/helpers/wait"
+require "nexussw/lxd/driver/images/rest"
 require "nexussw/lxd/transport/rest"
 
 module NexusSW
@@ -111,6 +112,10 @@ module NexusSW
 
           def container_exists?(container_id)
             api.containers[:metadata].map { |url| url.split("/").last }.include? container_id
+          end
+
+          def images
+            @images ||= Images::Rest.new(self)
           end
 
           protected

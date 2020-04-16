@@ -1,4 +1,5 @@
 require "nexussw/lxd/driver/mixins/helpers/wait"
+require "nexussw/lxd/driver/images/cli"
 require "nexussw/lxd/transport/cli"
 require "tempfile"
 require "yaml"
@@ -167,6 +168,10 @@ module NexusSW
             false
           end
 
+          def images
+            @images ||= Images::CLI.new(self)
+          end
+
           include Helpers::WaitMixin
 
           protected
@@ -215,7 +220,7 @@ module NexusSW
             remote
           end
 
-          def image(properties, remote = "")
+          def find_image(properties, remote = "")
             return nil unless properties && properties.any?
             cline = "lxc image list #{remote} --format=json"
             properties.each { |k, v| cline += " #{k}=#{v}" }
@@ -229,7 +234,7 @@ module NexusSW
             remote = container_options[:server] ? remote_for!(container_options[:server], container_options[:protocol] || "lxd") + ":" : ""
             name = container_options[:alias]
             name ||= container_options[:fingerprint]
-            name ||= image(container_options[:properties], remote)
+            name ||= find_image(container_options[:properties], remote)
             raise "No image parameters.  One of alias, fingerprint, or properties must be specified (The CLI interface does not support empty containers)" unless name
             "#{remote}#{name}"
           end

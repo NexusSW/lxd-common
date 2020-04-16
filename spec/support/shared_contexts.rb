@@ -7,6 +7,7 @@ shared_context "Nesting" do
   describe "Nested CLI Driver" do
     subject(:name) { "nested-" + base_name }
     subject(:driver) { NexusSW::LXD::Driver::CLI.new(base_transport.tap { |t| t.user "ubuntu" }) }
+    include_context "it can transfer images"
     include_context "it can create containers"
     include_context "Transport Functions"
     include_context "it can teardown a container"
@@ -22,9 +23,11 @@ shared_context "Driver Test" do |enable_nesting_tests = false|
     expect(ip).not_to be_empty
     expect(ip.is_a?(String)).to be true
   end
+  include_examples "it can manage images"
   context "Transport" do
     include_examples "Transport Functions"
     include_context "Nesting" if enable_nesting_tests
   end
+  include_context "it can delete images"
   it_behaves_like "it can teardown a container"
 end
